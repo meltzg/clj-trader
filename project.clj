@@ -24,7 +24,7 @@
                  "test/cljs"]
 
   :aliases {"fig:build" ["trampoline" "run" "-m" "figwheel.main" "-b" "dev" "-r"]
-            "fig:min"   ["run" "-m" "figwheel.main" "-O" "advanced" "-bo" "dev"]}
+            "fig:min"   ["run" "-m" "figwheel.main" "-bo" "dev"]}
 
   :profiles {:uberjar {:aot :all}
              :dev     {:dependencies   [[com.bhauman/figwheel-main "0.2.18"]
