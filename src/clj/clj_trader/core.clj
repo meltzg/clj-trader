@@ -1,7 +1,7 @@
 (ns clj-trader.core
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
-            [ring.util.response :refer [response]]
+            [ring.util.response :refer [response resource-response]]
             [ring.middleware.json :as json-mid]
             [ring.adapter.jetty :refer [run-jetty]])
   (:gen-class))
@@ -10,7 +10,10 @@
   (response {:echo body}))
 
 (defroutes app-routes
-           (POST "/echo" [] echo-handler))
+           (POST "/echo" [] echo-handler)
+           (GET "/" [] (resource-response "index.html" {:root "public"}))
+           (route/resources "/")
+           (route/not-found "Not Found"))
 
 (def app (-> app-routes
              (json-mid/wrap-json-body {:key-fn keyword})
