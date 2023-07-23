@@ -1,5 +1,6 @@
 (ns clj-trader.core
   (:require [compojure.core :refer :all]
+            [clojure.string :refer [upper-case lower-case]]
             [compojure.route :as route]
             [ring.util.response :refer [response resource-response]]
             [ring.middleware.json :as json-mid]
@@ -7,10 +8,11 @@
   (:gen-class))
 
 (defn echo-handler [{:keys [body]}]
-  (response {:echo body}))
+  (let [message (:message body)]
+    (response {:message (str (upper-case message) message (lower-case message))})))
 
 (defroutes app-routes
-           (POST "/echo" [] echo-handler)
+           (POST "/api/echo" [] echo-handler)
            (GET "/" [] (resource-response "index.html" {:root "public"}))
            (route/resources "/")
            (route/not-found "Not Found"))
@@ -25,4 +27,4 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& _]
-  (start-server false))
+  (start-server true))
