@@ -1,4 +1,4 @@
-# size-comparer
+# clj-trader
 
 FIXME: description
 
@@ -10,7 +10,7 @@ Download from http://example.com/FIXME.
 
 FIXME: explanation
 
-    $ java -jar size-comparer-0.1.0-standalone.jar [args]
+    $ java -jar clj-trader-0.1.0-standalone.jar [args]
 
 ## Options
 

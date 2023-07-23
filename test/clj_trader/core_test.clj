@@ -1,6 +1,6 @@
-(ns size-comparer.core-test
+(ns clj-trader.core-test
   (:require [clojure.test :refer :all]
-            [size-comparer.core :refer :all]))
+            [clj-trader.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
