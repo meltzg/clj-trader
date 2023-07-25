@@ -1,15 +1,14 @@
 (ns clj-trader.core
   (:require
-    [clj-trader.utils :as utils]
     [goog.dom :as gdom]
     [rum.core :as rum]
-    [cljs-http.client :as http]
+    [jayq.core :refer [$]]
     [cljs.core.async :refer [<! go]]
-    [jayq.core :refer [$]]))
+    [clj-trader.auth :refer [authenticator]]
+    [clj-trader.api-client :as api]))
 
-(defonce api-url (str (.-href (.-location js/window)) "api/"))
 
-(defonce app-state (atom {:counter 0
+(defonce app-state (atom {:counter      0
                           :echo-content nil}))
 
 (defn handle-counter-click []
@@ -17,14 +16,11 @@
   (swap! app-state update :counter inc))
 
 (defn handle-echo-submit []
-  (println "Submit" )
-  (go (let [message (.val ($ "#echo-text"))
-            response (<! (http/post (str api-url "echo")
-                                    {:json-params {:message message}}))
-            echo-message (get-in response [:body :message])]
-        (prn echo-message)
-        (swap! app-state assoc :echo-content echo-message)
-        (prn "AAA"))))
+  (go
+    (let [message (.val ($ "#echo-text"))
+          echo-message (<! (api/do-echo message))]
+      (prn echo-message)
+      (swap! app-state assoc :echo-content echo-message))))
 
 (rum/defc counter [number]
   [:div {:on-click handle-counter-click}
@@ -41,6 +37,7 @@
 
 (rum/defc content < rum/reactive []
   [:div {}
+   (authenticator true #())
    (counter (:counter (rum/react app-state)))
    (echo (:echo-content (rum/react app-state)))])
 
