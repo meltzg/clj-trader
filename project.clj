@@ -9,6 +9,7 @@
                  [ring/ring-core "1.10.0"]
                  [ring/ring-jetty-adapter "1.10.0"]
                  [ring/ring-json "0.5.1"]
+                 [com.stuartsierra/component "1.1.0"]
 
                  ;; CLJS Dependencies
                  [org.clojure/clojurescript "1.11.60"]
