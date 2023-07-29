@@ -1,14 +1,26 @@
 (ns clj-trader.core
   (:require [com.stuartsierra.component :as component]
-            [clj-trader.api :as api])
+            [clj-trader.component
+             [api :as api]
+             [config :as config]])
   (:gen-class))
 
 
-(defn clj-system []
-  (component/system-map :api (api/->Api "0.0.0.0" 8080)))
+(defn system [app-settings-file]
+  (component/system-map
+    :config (config/make-config app-settings-file)
+    :api (component/using
+           (api/make-api)
+           [:config])))
 
 
 (defn -main
-  "I don't do a whole lot ... yet."
-  [& _]
-  (component/start-system (clj-system)))
+  [& args]
+  (let [system (component/start (system (first args)))
+        lock (promise)
+        stop (fn []
+               (component/stop system)
+               (deliver lock :release))]
+    (.addShutdownHook (Runtime/getRuntime) (Thread. ^Runnable stop))
+    @lock
+    (System/exit 0)))

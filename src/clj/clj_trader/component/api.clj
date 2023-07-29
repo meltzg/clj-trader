@@ -1,5 +1,5 @@
-(ns clj-trader.api
-  (:require [com.stuartsierra.component :as component]
+(ns clj-trader.component.api
+  (:require [com.stuartsierra.component :as comp]
             [compojure.core :refer :all]
             [clojure.string :refer [upper-case lower-case]]
             [compojure.route :as route]
@@ -21,14 +21,18 @@
              (json-mid/wrap-json-body {:key-fn keyword})
              (json-mid/wrap-json-response)))
 
-(defrecord Api [host port]
-  component/Lifecycle
+(defrecord Api [config]
+  comp/Lifecycle
 
   (start [component]
-    (println "Starting server on host" host ":" port)
-    (assoc component :server (run-jetty app {:port 8080 :join? false})))
+    (let [{:keys [host port]} (:config config)]
+      (println "Starting server on host" host ":" port)
+      (assoc component :server (run-jetty app {:host host :port port :join? false}))))
 
   (stop [component]
     (println "Stopping server")
     (.stop (:server component))
     (assoc component :server nil)))
+
+(defn make-api []
+  (map->Api {}))
