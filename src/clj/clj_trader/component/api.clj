@@ -23,13 +23,19 @@
   component/Lifecycle
 
   (start [this]
-    (let [{:keys [host port]} (:config config)]
-      (println "Starting server on host" host ":" port)
+    (let [{:keys [host port ssl-port keystore-path keystore-pass]} (:config config)]
+      (println "Starting server on host" host " port: " port " ssl-port: " ssl-port)
       (assoc this :server (run-jetty
                                  (-> (app-routes td-brokerage)
                                      (json-mid/wrap-json-body {:key-fn keyword})
                                      (json-mid/wrap-json-response))
-                                 {:host host :port port :join? false}))))
+                                 {:ssl? true
+                                  :host host
+                                  :port port
+                                  :ssl-port ssl-port
+                                  :keystore keystore-path
+                                  :key-password keystore-pass
+                                  :join? false}))))
 
   (stop [this]
     (println "Stopping server")

@@ -1,2 +1,6 @@
 {:host "localhost"
- :port 8090}
+ :port 8080
+ :ssl-port 8443
+ :client-id "CLIENT_ID"
+ :keystore-path "/path/to/keystore.jks"
+ :keystore-pass "PASSWORD"}
