@@ -9,7 +9,8 @@
 
 
 (defonce app-state (atom {:counter      0
-                          :echo-content nil}))
+                          :echo-content nil
+                          :signed-in? false}))
 
 (defn handle-counter-click []
   (prn @app-state)
@@ -21,6 +22,9 @@
           echo-message (<! (api/do-echo message))]
       (prn echo-message)
       (swap! app-state assoc :echo-content echo-message))))
+
+(defn handle-auth-change [signed-in?]
+  (swap! app-state assoc :signed-in? signed-in?))
 
 (rum/defc counter [number]
   [:div {:on-click handle-counter-click}
@@ -37,7 +41,7 @@
 
 (rum/defc content < rum/reactive []
   [:div {}
-   (authenticator true #())
+   (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
    (counter (:counter (rum/react app-state)))
    (echo (:echo-content (rum/react app-state)))])
 
@@ -57,9 +61,5 @@
 
 ;; specify reload hook with ^:after-load metadata
 (defn ^:after-load on-reload []
-  (mount-app-element)
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
-  )
+  (mount-app-element))
 

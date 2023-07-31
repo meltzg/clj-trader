@@ -25,5 +25,5 @@
   (map->Config {:app-settings-file app-settings-file}))
 
 (defn get-redirect-uri [config]
-  (let [{:keys [host port]} (:config config)]
-    (str "https://" host ":" port "/")))
+  (let [{:keys [host ssl-port]} (:config config)]
+    (str "https://" host ":" ssl-port "/")))
