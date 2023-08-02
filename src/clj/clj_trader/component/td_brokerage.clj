@@ -1,43 +1,76 @@
 (ns clj-trader.component.td-brokerage
-  (:require [com.stuartsierra.component :as component]
-            [clj-trader.component.config :refer [get-redirect-uri]])
-  (:import (java.io FileInputStream FileOutputStream)
-           (java.security KeyStore KeyStore$PasswordProtection KeyStore$SecretKeyEntry)
-           (javax.crypto SecretKeyFactory)
-           (javax.crypto.spec PBEKeySpec)))
+  (:require [clj-trader.component.config :refer [get-redirect-uri]]
+            [com.stuartsierra.component :as component]
+            [clj-http.client :as http]
+            [clj-time.core :as t]
+            [clj-trader.utils.secrets :as secrets]
+            [clojure.java.io :as io]
+            [ring.util.codec :refer [form-encode]]))
 
-(defn make-new-keystore [entry entry-password keystore-password]
-  (let [factory (SecretKeyFactory/getInstance "PBE")
-        generated-secret (.generateSecret factory (PBEKeySpec. (.toCharArray entry-password)))
-        ks (KeyStore/getInstance "JCEKS")
-        keystore-pp (KeyStore$PasswordProtection. (.toCharArray keystore-password))]
-    (.load ks nil (.toCharArray keystore-password))
-    (.setEntry ks entry (KeyStore$SecretKeyEntry. generated-secret) keystore-pp)
-    ks))
+(def api-root "https://api.tdameritrade.com/v1")
+(def secrets-file "td-secrets.jks")
+(def td-secrets (atom nil))
 
-(defn get-password-from-keystore [entry ks keystore-password]
-  (let [keystore-pp (KeyStore$PasswordProtection. (.toCharArray keystore-password))
-        factory (SecretKeyFactory/getInstance "PBE")
-        ske (.getEntry ks entry keystore-pp)
-        key-spec (.getKeySpec factory (.getSecretKey ske) PBEKeySpec)
-        password (.getPassword key-spec)]
-    (String. password)))
+(defn- make-request [{:keys [method path options]}]
+  (cond (= method :post)
+        (http/post (str api-root path)
+                   options)))
 
-(defn save-keystore! [ks keystore-password path]
-  (.store ks (FileOutputStream. path) (.toCharArray keystore-password)))
+(defn- format-sign-in-response [{:keys [body]}]
+  (let [{:keys [access_token
+                expires_in
+                refresh_token
+                refresh_token_expires_in]} body]
+    (println body)
+    {:access-token       access_token
+     :refresh-token      refresh_token
+     :expires-at         (t/from-now (t/seconds expires_in))
+     :refresh-expires-at (t/from-now (t/seconds refresh_token_expires_in))}))
 
-(defn load-keystore! [path keystore-password]
-  (let [ks (KeyStore/getInstance "JCEKS")
-        f-in (FileInputStream. path)]
-    (.load ks f-in (.toCharArray keystore-password))
-    ks))
+(defn- save-access-info! [keystore-pass access-info]
+  (let [save-secret (partial secrets/set-secret-in-keystore! @td-secrets keystore-pass)]
+    (map #(apply save-secret %) access-info))
+  (secrets/save-keystore! @td-secrets keystore-pass secrets-file))
+
+(defn- load-access-info [keystore-pass]
+  (into {} (map #(secrets/get-secret-from-keystore @td-secrets keystore-pass %)
+                [:access-token
+                 :refresh-token
+                 :expires-at
+                 :refresh-expires-at])))
+
+(defmulti command->request :command)
+
+(defmethod command->request :sign-in [{:keys [code config]}]
+  (let [body {:grant_type   "authorization_code"
+              :access_type  "offline"
+              :code         code
+              :client_id    (:client-id config)
+              :redirect_uri (get-redirect-uri config)}]
+    {:method  :post
+     :path    "/oauth2/token"
+     :options {:headers {:content-type "application/x-www-form-urlencoded"}
+               :body    (form-encode body)}}))
+
+(defmulti execute-command :command)
+
+(defmethod execute-command :sign-in [command]
+  (->> (command->request command)
+       make-request
+       format-sign-in-response
+       (save-access-info! (get-in command [:config :keystore-pass]))))
 
 (defrecord TDBrokerage [config]
   component/Lifecycle
 
   (start [this]
+    (if (.exists (io/file secrets-file))
+      (swap! td-secrets (fn [_] (secrets/load-keystore! secrets-file (get-in config [:config :keystore-pass]))))
+      (do
+        (swap! td-secrets (fn [_] (secrets/make-new-keystore (get-in config [:config :keystore-pass]))))
+        (secrets/save-keystore! @td-secrets (get-in config [:config :keystore-pass]) secrets-file)))
     (assoc this :td-brokerage {:oauth-uri (str "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri="
-                                               (get-redirect-uri config)
+                                               (get-redirect-uri (:config config))
                                                "&client_id="
                                                (get-in config [:config :client-id])
                                                "%40AMER.OAUTHAP")}))

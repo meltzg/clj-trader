@@ -5,17 +5,25 @@
             [compojure.route :as route]
             [ring.util.response :refer [response resource-response]]
             [ring.middleware.json :as json-mid]
-            [ring.adapter.jetty :refer [run-jetty]]))
+            [ring.adapter.jetty :refer [run-jetty]]
+            [clj-trader.component.td-brokerage :as td]))
 
-(defn echo-handler [{:keys [body]}]
+(defn- echo-handler [{:keys [body]}]
   (let [message (:message body)]
     (response {:message (str (upper-case message) message (lower-case message))})))
 
-(defn- app-routes [td-brokerage]
+(defn- sign-in-handler [{:keys [config]} {:keys [body]}]
+  (let [code (:code body)]
+    (td/execute-command {:command :sign-in
+                         :code code
+                         :config config})))
+
+(defn- app-routes [td-brokerage config]
   (routes
     (POST "/api/echo" [] echo-handler)
     (GET "/api/oauthUri" [] (fn [_] (response {:oauth-uri (get-in td-brokerage [:td-brokerage :oauth-uri])})))
     (GET "/" [] (resource-response "index.html" {:root "public"}))
+    (POST "/api/signIn" [] (partial sign-in-handler config))
     (route/resources "/")
     (route/not-found "Not Found")))
 
@@ -26,7 +34,7 @@
     (let [{:keys [host port ssl-port keystore-path keystore-pass]} (:config config)]
       (println "Starting server on host" host " port: " port " ssl-port: " ssl-port)
       (assoc this :server (run-jetty
-                                 (-> (app-routes td-brokerage)
+                                 (-> (app-routes td-brokerage config)
                                      (json-mid/wrap-json-body {:key-fn keyword})
                                      (json-mid/wrap-json-response))
                                  {:ssl? true

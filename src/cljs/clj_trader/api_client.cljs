@@ -3,16 +3,22 @@
             [cljs.core.async :refer [<! go]]
             [clojure.string :as string]))
 
-(defonce api-url (string/split (str (.-href (.-location js/window)) "api/")
-                               #"\?"))
-
+(def api-url (str (first (string/split (.-href (.-location js/window))
+                                  #"\?"))
+                  "api/"))
 
 (defn do-echo [message]
   (go (let [response (<! (http/post (str api-url "echo")
                                     {:json-params {:message message}}))]
-        (prn response)
         (get-in response [:body :message]))))
 
 (defn get-oauth-uri []
   (go (let [response (<! (http/get (str api-url "oauthUri")))]
         (get-in response [:body :oauth-uri]))))
+
+(defn sign-in [code]
+  (go
+    (prn code)
+    (let [response (<! (http/post (str api-url "signIn")
+                                  {:json-params {:code code}}))]
+      (:body response))))

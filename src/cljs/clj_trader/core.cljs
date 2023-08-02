@@ -2,7 +2,6 @@
   (:require
     [goog.dom :as gdom]
     [rum.core :as rum]
-    [jayq.core :refer [$]]
     [cljs.core.async :refer [<! go]]
     [clj-trader.auth :refer [authenticator]]
     [clj-trader.api-client :as api]))
@@ -10,17 +9,16 @@
 
 (defonce app-state (atom {:counter      0
                           :echo-content nil
-                          :signed-in? false}))
+                          :to-echo      nil
+                          :signed-in?   false}))
 
 (defn handle-counter-click []
   (prn @app-state)
   (swap! app-state update :counter inc))
 
-(defn handle-echo-submit []
+(defn handle-echo-submit [message]
   (go
-    (let [message (.val ($ "#echo-text"))
-          echo-message (<! (api/do-echo message))]
-      (prn echo-message)
+    (let [echo-message (<! (api/do-echo message))]
       (swap! app-state assoc :echo-content echo-message))))
 
 (defn handle-auth-change [signed-in?]
@@ -31,13 +29,17 @@
    (str "Clicked " number " times")])
 
 (rum/defc echo [message]
-  [:div
-   [:h3 message]
-   [:div
-    [:label
-     "Message"
-     [:input {:type "text" :id "echo-text"}]]
-    [:input {:type "submit" :value "Submit" :on-click handle-echo-submit}]]])
+  (let [[value set-value!] (rum/use-state "")]
+    [:div
+     [:h3 message]
+     [:div
+      [:label
+       "Message"
+       [:input {:type "text"
+                :id "echo-text"
+                :value value
+                :on-change #(set-value! (.. % -target -value))}]]
+      [:input {:type "submit" :value "Submit" :on-click #(handle-echo-submit value)}]]]))
 
 (rum/defc content < rum/reactive []
   [:div {}
@@ -52,6 +54,16 @@
   (gdom/getElement "app"))
 
 (defn mount-app-element []
+  (when (not-empty (.-search (.-location js/window)))
+    (go
+      (let [code (-> js/window
+                     (.. -location -search)
+                     js/URLSearchParams.
+                     (.get "code"))]
+        (<! (api/sign-in code))
+        ;(.replace (.-location js/window)
+        ;          (.-origin (.-location js/window)))
+        )))
   (when-let [el (get-app-element)]
     (mount el)))
 

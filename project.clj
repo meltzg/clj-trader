@@ -9,15 +9,18 @@
                  [ring/ring-core "1.10.0"]
                  [ring/ring-jetty-adapter "1.10.0"]
                  [ring/ring-json "0.5.1"]
+                 [ring/ring-codec "1.2.0"]
                  [com.stuartsierra/component "1.1.0"]
+                 [clj-http "3.11.0"]
+                 [clj-time "0.15.2"]
 
                  ;; CLJS Dependencies
                  [org.clojure/clojurescript "1.11.60"]
                  [rum "0.12.11"]
-                 [jayq "2.5.5"]
                  [sablono "0.8.6"]
                  [cheshire "5.8.1"]
                  [cljs-http "0.1.46"]]
+  :plugins [[lein-ancient "0.7.0"]]
   :main ^:skip-aot clj-trader.core
   :target-path "target/%s"
   :source-paths ["src/clj"
