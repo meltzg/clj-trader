@@ -3,6 +3,7 @@
             [com.stuartsierra.component :as component]
             [clj-http.client :as http]
             [clj-time.core :as t]
+            [clj-time.coerce :as tc]
             [clj-trader.utils.secrets :as secrets]
             [clojure.java.io :as io]
             [ring.util.codec :refer [form-encode]]))
@@ -17,27 +18,32 @@
                    options)))
 
 (defn- format-sign-in-response [{:keys [body]}]
+  (println "Body" body)
   (let [{:keys [access_token
                 expires_in
                 refresh_token
                 refresh_token_expires_in]} body]
-    (println body)
     {:access-token       access_token
      :refresh-token      refresh_token
      :expires-at         (t/from-now (t/seconds expires_in))
      :refresh-expires-at (t/from-now (t/seconds refresh_token_expires_in))}))
 
 (defn- save-access-info! [keystore-pass access-info]
-  (let [save-secret (partial secrets/set-secret-in-keystore! @td-secrets keystore-pass)]
+  (println "Save" keystore-pass access-info)
+  (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
+                                       :refresh-expires-at (tc/to-string (:refresh-expires-at access-info)))
+        save-secret (partial secrets/set-secret-in-keystore! @td-secrets keystore-pass)]
     (map #(apply save-secret %) access-info))
   (secrets/save-keystore! @td-secrets keystore-pass secrets-file))
 
 (defn- load-access-info [keystore-pass]
-  (into {} (map #(secrets/get-secret-from-keystore @td-secrets keystore-pass %)
-                [:access-token
-                 :refresh-token
-                 :expires-at
-                 :refresh-expires-at])))
+  (let [access-info (into {} (map #(secrets/get-secret-from-keystore @td-secrets keystore-pass %)
+                                  [:access-token
+                                   :refresh-token
+                                   :expires-at
+                                   :refresh-expires-at]))]
+    ((assoc access-info :expires-at (tc/from-string (:expires-at access-info))
+                        :refresh-expires-at (tc/from-string (:refresh-expires-at access-info))))))
 
 (defmulti command->request :command)
 
@@ -50,7 +56,8 @@
     {:method  :post
      :path    "/oauth2/token"
      :options {:headers {:content-type "application/x-www-form-urlencoded"}
-               :body    (form-encode body)}}))
+               :body    (form-encode body)
+               :as :json}}))
 
 (defmulti execute-command :command)
 

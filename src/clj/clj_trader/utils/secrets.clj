@@ -10,6 +10,7 @@
     ks))
 
 (defn set-secret-in-keystore! [ks keystore-password entry entry-secret]
+  (println ks keystore-password entry entry-secret)
   (let [factory (SecretKeyFactory/getInstance "PBE")
         generated-secret (.generateSecret factory (PBEKeySpec. (.toCharArray entry-secret)))
         keystore-pp (KeyStore$PasswordProtection. (.toCharArray keystore-password))]
