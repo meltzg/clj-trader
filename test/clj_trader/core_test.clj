@@ -1,6 +1,6 @@
 (ns clj-trader.core-test
-  (:require [clojure.test :refer :all]
-            [clj-trader.core :refer :all]))
+  (:require [clj-trader.core :refer :all]
+            [clojure.test :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."

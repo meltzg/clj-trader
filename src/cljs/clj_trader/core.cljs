@@ -1,10 +1,10 @@
 (ns clj-trader.core
   (:require
-    [goog.dom :as gdom]
-    [rum.core :as rum]
-    [cljs.core.async :refer [<! go]]
+    [clj-trader.api-client :as api]
     [clj-trader.auth :refer [authenticator]]
-    [clj-trader.api-client :as api]))
+    [cljs.core.async :refer [<! go]]
+    [goog.dom :as gdom]
+    [rum.core :as rum]))
 
 
 (defonce app-state (atom {:counter      0
@@ -35,9 +35,9 @@
      [:div
       [:label
        "Message"
-       [:input {:type "text"
-                :id "echo-text"
-                :value value
+       [:input {:type      "text"
+                :id        "echo-text"
+                :value     value
                 :on-change #(set-value! (.. % -target -value))}]]
       [:input {:type "submit" :value "Submit" :on-click #(handle-echo-submit value)}]]]))
 

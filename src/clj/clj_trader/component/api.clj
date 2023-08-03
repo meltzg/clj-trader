@@ -1,13 +1,13 @@
 (ns clj-trader.component.api
-  (:require [com.stuartsierra.component :as component]
-            [compojure.core :refer :all]
-            [clojure.string :refer [upper-case lower-case]]
-            [compojure.route :as route]
-            [ring.util.response :refer [response resource-response]]
-            [ring.middleware.json :as json-mid]
-            [ring.adapter.jetty :refer [run-jetty]]
+  (:require [clj-time.coerce :as tc]
             [clj-trader.component.td-brokerage :as td]
-            [clj-time.coerce :as tc]))
+            [clojure.string :refer [lower-case upper-case]]
+            [com.stuartsierra.component :as component]
+            [compojure.core :refer :all]
+            [compojure.route :as route]
+            [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.json :as json-mid]
+            [ring.util.response :refer [resource-response response]]))
 
 (defn- echo-handler [{:keys [body]}]
   (let [message (:message body)]

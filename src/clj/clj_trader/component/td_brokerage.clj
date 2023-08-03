@@ -1,11 +1,11 @@
 (ns clj-trader.component.td-brokerage
-  (:require [clj-trader.component.config :refer [get-redirect-uri]]
-            [com.stuartsierra.component :as component]
-            [clj-http.client :as http]
-            [clj-time.core :as t]
+  (:require [clj-http.client :as http]
             [clj-time.coerce :as tc]
+            [clj-time.core :as t]
+            [clj-trader.component.config :refer [get-redirect-uri]]
             [clj-trader.utils.secrets :as secrets]
             [clojure.java.io :as io]
+            [com.stuartsierra.component :as component]
             [ring.util.codec :refer [form-encode]]))
 
 (def api-root "https://api.tdameritrade.com/v1")

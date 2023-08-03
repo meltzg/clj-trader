@@ -1,9 +1,9 @@
 (ns clj-trader.core
-  (:require [com.stuartsierra.component :as component]
-            [clj-trader.component
-             [api :as api]
-             [config :as config]
-             [td-brokerage :as td-brokerage]])
+  (:require (clj-trader.component
+              [api :as api]
+              [config :as config]
+              [td-brokerage :as td-brokerage])
+            [com.stuartsierra.component :as component])
   (:gen-class))
 
 

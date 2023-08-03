@@ -2,8 +2,8 @@
   (:require [clojure.edn :as edn]
             [com.stuartsierra.component :as component]))
 
-(def application-settings (atom {:host "localhost"
-                                 :port 8080
+(def application-settings (atom {:host     "localhost"
+                                 :port     8080
                                  :ssl-port 8443}))
 
 (defrecord Config [app-settings-file]

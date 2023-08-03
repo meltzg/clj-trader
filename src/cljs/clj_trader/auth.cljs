@@ -1,7 +1,7 @@
 (ns clj-trader.auth
-  (:require [rum.core :as rum]
+  (:require [clj-trader.api-client :as api]
             [cljs.core.async :refer [<! go]]
-            [clj-trader.api-client :as api]))
+            [rum.core :as rum]))
 
 (defn initiate-auth []
   (go
