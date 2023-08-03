@@ -59,10 +59,11 @@
       (let [code (-> js/window
                      (.. -location -search)
                      js/URLSearchParams.
-                     (.get "code"))]
-        (<! (api/sign-in code))
-        ;(.replace (.-location js/window)
-        ;          (.-origin (.-location js/window)))
+                     (.get "code"))
+            sign-in-resp (<! (api/sign-in code))]
+        (prn sign-in-resp)
+        (.replace (.-location js/window)
+                  (.-origin (.-location js/window)))
         )))
   (when-let [el (get-app-element)]
     (mount el)))
