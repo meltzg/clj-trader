@@ -19,9 +19,10 @@
                                        :code         code
                                        :config       config
                                        :td-brokerage td-brokerage})
-                  (select-keys [:expires-at :refresh-expires-at])
-                  (update-vals tc/to-string)
-                  (assoc :signed-in? true)))))
+                  (select-keys [:expires-at :refresh-expires-at :signed-in?])
+                  (update-vals #(if (instance? org.joda.time.DateTime %)
+                                  (tc/to-string %)
+                                  %))))))
 
 (defn- app-routes [td-brokerage config]
   (routes

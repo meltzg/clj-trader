@@ -38,8 +38,10 @@
                                   [:access-token
                                    :refresh-token
                                    :expires-at
-                                   :refresh-expires-at]))]
-    (assoc access-info :expires-at (tc/from-string (:expires-at access-info))
+                                   :refresh-expires-at]))
+        expires-at (tc/from-string (:expires-at access-info))]
+    (assoc access-info :signed-in? (t/after? expires-at (t/now))
+                       :expires-at expires-at
                        :refresh-expires-at (tc/from-string (:refresh-expires-at access-info)))))
 
 (defmulti command->request :command)
@@ -54,7 +56,7 @@
      :path    "/oauth2/token"
      :options {:headers {:content-type "application/x-www-form-urlencoded"}
                :body    (form-encode body)
-               :as :json}}))
+               :as      :json}}))
 
 (defmulti execute-command :command)
 
@@ -81,7 +83,7 @@
                                                "&client_id="
                                                (get-in config [:config :client-id])
                                                "%40AMER.OAUTHAP")
-                               :keystore (load-or-create-keystore (get-in config [:config :keystore-pass]))}))
+                               :keystore  (load-or-create-keystore (get-in config [:config :keystore-pass]))}))
 
   (stop [this]
     (assoc this :td-brokerage nil)))
