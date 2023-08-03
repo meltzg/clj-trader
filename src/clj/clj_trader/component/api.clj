@@ -14,9 +14,10 @@
 
 (defn- sign-in-handler [{:keys [config]} {:keys [body]}]
   (let [code (:code body)]
-    (td/execute-command {:command :sign-in
-                         :code code
-                         :config config})))
+    (response (select-keys (td/execute-command {:command :sign-in
+                                                :code    code
+                                                :config  config})
+                           [:expires-at :refresh-expires-at]))))
 
 (defn- app-routes [td-brokerage config]
   (routes
@@ -34,16 +35,16 @@
     (let [{:keys [host port ssl-port keystore-path keystore-pass]} (:config config)]
       (println "Starting server on host" host " port: " port " ssl-port: " ssl-port)
       (assoc this :server (run-jetty
-                                 (-> (app-routes td-brokerage config)
-                                     (json-mid/wrap-json-body {:key-fn keyword})
-                                     (json-mid/wrap-json-response))
-                                 {:ssl? true
-                                  :host host
-                                  :port port
-                                  :ssl-port ssl-port
-                                  :keystore keystore-path
-                                  :key-password keystore-pass
-                                  :join? false}))))
+                            (-> (app-routes td-brokerage config)
+                                (json-mid/wrap-json-body {:key-fn keyword})
+                                (json-mid/wrap-json-response))
+                            {:ssl?         true
+                             :host         host
+                             :port         port
+                             :ssl-port     ssl-port
+                             :keystore     keystore-path
+                             :key-password keystore-pass
+                             :join?        false}))))
 
   (stop [this]
     (println "Stopping server")

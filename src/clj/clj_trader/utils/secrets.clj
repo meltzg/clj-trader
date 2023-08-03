@@ -26,10 +26,11 @@
     (String. password)))
 
 (defn save-keystore! [ks keystore-password path]
-  (.store ks (FileOutputStream. path) (.toCharArray keystore-password)))
+  (with-open [f-out (FileOutputStream. path)]
+    (.store ks f-out (.toCharArray keystore-password))))
 
 (defn load-keystore! [path keystore-password]
-  (let [ks (KeyStore/getInstance "JCEKS")
-        f-in (FileInputStream. path)]
-    (.load ks f-in (.toCharArray keystore-password))
-    ks))
+  (with-open [f-in (FileInputStream. path)]
+    (let [ks (KeyStore/getInstance "JCEKS")]
+      (.load ks f-in (.toCharArray keystore-password))
+      ks)))

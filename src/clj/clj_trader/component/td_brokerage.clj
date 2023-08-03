@@ -18,7 +18,6 @@
                    options)))
 
 (defn- format-sign-in-response [{:keys [body]}]
-  (println "Body" body)
   (let [{:keys [access_token
                 expires_in
                 refresh_token
@@ -29,7 +28,6 @@
      :refresh-expires-at (t/from-now (t/seconds refresh_token_expires_in))}))
 
 (defn- save-access-info! [keystore-pass access-info]
-  (println "Save" keystore-pass access-info)
   (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
                                        :refresh-expires-at (tc/to-string (:refresh-expires-at access-info)))
         save-secret (partial secrets/set-secret-in-keystore! @td-secrets keystore-pass)]
@@ -65,7 +63,8 @@
   (->> (command->request command)
        make-request
        format-sign-in-response
-       (save-access-info! (get-in command [:config :keystore-pass]))))
+       (save-access-info! (get-in command [:config :keystore-pass])))
+  (load-access-info (get-in command [:config :keystore-pass])))
 
 (defrecord TDBrokerage [config]
   component/Lifecycle
@@ -75,7 +74,8 @@
       (swap! td-secrets (fn [_] (secrets/load-keystore! secrets-file (get-in config [:config :keystore-pass]))))
       (do
         (swap! td-secrets (fn [_] (secrets/make-new-keystore (get-in config [:config :keystore-pass]))))
-        (secrets/save-keystore! @td-secrets (get-in config [:config :keystore-pass]) secrets-file)))
+        (secrets/save-keystore! @td-secrets (get-in config [:config :keystore-pass]) secrets-file)
+        (println "Keystore" @td-secrets)))
     (assoc this :td-brokerage {:oauth-uri (str "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri="
                                                (get-redirect-uri (:config config))
                                                "&client_id="
