@@ -6,25 +6,28 @@
             [ring.util.response :refer [response resource-response]]
             [ring.middleware.json :as json-mid]
             [ring.adapter.jetty :refer [run-jetty]]
-            [clj-trader.component.td-brokerage :as td]))
+            [clj-trader.component.td-brokerage :as td]
+            [clj-time.coerce :as tc]))
 
 (defn- echo-handler [{:keys [body]}]
   (let [message (:message body)]
     (response {:message (str (upper-case message) message (lower-case message))})))
 
-(defn- sign-in-handler [{:keys [config]} {:keys [body]}]
+(defn- sign-in-handler [{:keys [config]} {:keys [td-brokerage]} {:keys [body]}]
   (let [code (:code body)]
-    (response (select-keys (td/execute-command {:command :sign-in
-                                                :code    code
-                                                :config  config})
-                           [:expires-at :refresh-expires-at]))))
+    (response (update-vals (select-keys (td/execute-command {:command      :sign-in
+                                                             :code         code
+                                                             :config       config
+                                                             :td-brokerage td-brokerage})
+                                        [:expires-at :refresh-expires-at])
+                           tc/to-string))))
 
 (defn- app-routes [td-brokerage config]
   (routes
     (POST "/api/echo" [] echo-handler)
     (GET "/api/oauthUri" [] (fn [_] (response {:oauth-uri (get-in td-brokerage [:td-brokerage :oauth-uri])})))
     (GET "/" [] (resource-response "index.html" {:root "public"}))
-    (POST "/api/signIn" [] (partial sign-in-handler config))
+    (POST "/api/signIn" [] (partial sign-in-handler config td-brokerage))
     (route/resources "/")
     (route/not-found "Not Found")))
 
