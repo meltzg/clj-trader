@@ -15,12 +15,13 @@
 
 (defn- sign-in-handler [{:keys [config]} {:keys [td-brokerage]} {:keys [body]}]
   (let [code (:code body)]
-    (response (update-vals (select-keys (td/execute-command {:command      :sign-in
-                                                             :code         code
-                                                             :config       config
-                                                             :td-brokerage td-brokerage})
-                                        [:expires-at :refresh-expires-at])
-                           tc/to-string))))
+    (response (-> (td/execute-command {:command      :sign-in
+                                       :code         code
+                                       :config       config
+                                       :td-brokerage td-brokerage})
+                  (select-keys [:expires-at :refresh-expires-at])
+                  (update-vals tc/to-string)
+                  (assoc :signed-in? true)))))
 
 (defn- app-routes [td-brokerage config]
   (routes
