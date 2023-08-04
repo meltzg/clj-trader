@@ -73,6 +73,12 @@
 (defmethod execute-command :auth-status [{:keys [td-brokerage config]}]
   (load-access-info td-brokerage (:keystore-pass config)))
 
+(defmethod execute-command :sign-out [{:keys [td-brokerage config]}]
+  (doall (map #(.deleteEntry (:keystore td-brokerage) (name %))
+              [:access-token :refresh-token :expires-at :refresh-expires-at]))
+  (secrets/save-keystore! (:keystore td-brokerage) (:keystore-pass config) secrets-file)
+  (load-access-info td-brokerage (:keystore-pass config)))
+
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))
     (secrets/load-keystore! secrets-file keystore-pass)

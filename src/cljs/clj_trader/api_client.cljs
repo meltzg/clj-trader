@@ -24,3 +24,7 @@
 (defn auth-status []
   (go (let [response (<! (http/get (str api-url "authStatus")))]
         (:body response))))
+
+(defn sign-out []
+  (go (let [response (<! (http/get (str api-url "signOut")))]
+        (:body response))))

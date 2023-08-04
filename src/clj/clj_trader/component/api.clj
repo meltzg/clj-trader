@@ -33,6 +33,15 @@
                                 (tc/to-string %)
                                 %)))))
 
+(defn- sign-out-handler [{:keys [config]} {:keys [td-brokerage]} _]
+  (response (-> (td/execute-command {:command      :sign-out
+                                     :config       config
+                                     :td-brokerage td-brokerage})
+                (select-keys [:expires-at :refresh-expires-at :signed-in?])
+                (update-vals #(if (instance? org.joda.time.DateTime %)
+                                (tc/to-string %)
+                                %)))))
+
 (defn- app-routes [td-brokerage config]
   (routes
     (POST "/api/echo" [] echo-handler)
@@ -40,6 +49,7 @@
     (GET "/" [] (resource-response "index.html" {:root "public"}))
     (POST "/api/signIn" [] (partial sign-in-handler config td-brokerage))
     (GET "/api/authStatus" [] (partial get-auth-status-handler config td-brokerage))
+    (GET "/api/signOut" [] (partial sign-out-handler config td-brokerage))
     (route/resources "/")
     (route/not-found "Not Found")))
 

@@ -25,5 +25,7 @@
    (if signed-in?
      [:div
       [:button {:on-click #(refresh-auth-status signed-in? change-signed-in)} "Refresh Status"]
-      [:button "Sign Out"]]
+      [:button {:on-click (fn []
+                            (go (<! (api/sign-out))
+                                (refresh-auth-status signed-in? change-signed-in)))} "Sign Out"]]
      [:button {:on-click initiate-auth} "Sign In"])])
