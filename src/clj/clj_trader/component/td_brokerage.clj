@@ -34,15 +34,18 @@
   (secrets/save-keystore! keystore keystore-pass secrets-file))
 
 (defn load-access-info [{:keys [keystore]} keystore-pass]
-  (let [access-info (into {} (map (fn [key] {key (secrets/get-secret-from-keystore keystore keystore-pass key)})
-                                  [:access-token
-                                   :refresh-token
-                                   :expires-at
-                                   :refresh-expires-at]))
-        expires-at (tc/from-string (:expires-at access-info))]
-    (assoc access-info :signed-in? (t/after? expires-at (t/now))
-                       :expires-at expires-at
-                       :refresh-expires-at (tc/from-string (:refresh-expires-at access-info)))))
+  (if (not-every? true? (map #(.containsAlias keystore (name %))
+                             [:access-token :refresh-token :expires-at :refresh-expires-at]))
+    {:signed-in? false}
+    (let [access-info (into {} (map (fn [key] {key (secrets/get-secret-from-keystore keystore keystore-pass key)})
+                                    [:access-token
+                                     :refresh-token
+                                     :expires-at
+                                     :refresh-expires-at]))
+          expires-at (tc/from-string (:expires-at access-info))]
+      (assoc access-info :signed-in? (t/after? expires-at (t/now))
+                         :expires-at expires-at
+                         :refresh-expires-at (tc/from-string (:refresh-expires-at access-info))))))
 
 (defmulti command->request :command)
 
@@ -60,12 +63,15 @@
 
 (defmulti execute-command :command)
 
-(defmethod execute-command :sign-in [command]
+(defmethod execute-command :sign-in [{:keys [td-brokerage config] :as command}]
   (->> (command->request command)
        make-request
        format-sign-in-response
-       (save-access-info! (:td-brokerage command) (get-in command [:config :keystore-pass])))
-  (load-access-info (:td-brokerage command) (get-in command [:config :keystore-pass])))
+       (save-access-info! td-brokerage (:keystore-pass config)))
+  (load-access-info td-brokerage (:keystore-pass config)))
+
+(defmethod execute-command :auth-status [{:keys [td-brokerage config]}]
+  (load-access-info td-brokerage (:keystore-pass config)))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))

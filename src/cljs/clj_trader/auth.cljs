@@ -8,16 +8,22 @@
     (let [oauth-uri (<! (api/get-oauth-uri))]
       (.replace (.-location js/window) oauth-uri))))
 
+(defn refresh-auth-status [current-state on-change]
+  (go (let [auth-status (<! (api/auth-status))]
+        (when-not (= current-state (:signed-in? auth-status))
+          (on-change (:signed-in? auth-status))))))
+
 (rum/defc auth-status [signed-in?]
   (if signed-in?
     [:div.signin-status.signed-in "Connected"]
     [:div.signin-status.signed-out "Disconnected"]))
 
 (rum/defc authenticator [signed-in? change-signed-in]
+  (refresh-auth-status signed-in? change-signed-in)
   [:div.authenticator
    (auth-status signed-in?)
    (if signed-in?
      [:div
-      [:button "Refresh Status"]
+      [:button {:on-click #(refresh-auth-status signed-in? change-signed-in)} "Refresh Status"]
       [:button "Sign Out"]]
      [:button {:on-click initiate-auth} "Sign In"])])

@@ -17,8 +17,10 @@
         (get-in response [:body :oauth-uri]))))
 
 (defn sign-in [code]
-  (go
-    (prn code)
-    (let [response (<! (http/post (str api-url "signIn")
-                                  {:json-params {:code code}}))]
-      (:body response))))
+  (go (let [response (<! (http/post (str api-url "signIn")
+                                    {:json-params {:code code}}))]
+        (:body response))))
+
+(defn auth-status []
+  (go (let [response (<! (http/get (str api-url "authStatus")))]
+        (:body response))))
