@@ -7,45 +7,14 @@
     [rum.core :as rum]))
 
 
-(defonce app-state (atom {:counter      0
-                          :echo-content nil
-                          :to-echo      nil
-                          :signed-in?   false}))
-
-(defn handle-counter-click []
-  (prn @app-state)
-  (swap! app-state update :counter inc))
-
-(defn handle-echo-submit [message]
-  (go
-    (let [echo-message (<! (api/do-echo message))]
-      (swap! app-state assoc :echo-content echo-message))))
+(defonce app-state (atom {:signed-in?   false}))
 
 (defn handle-auth-change [signed-in?]
   (swap! app-state assoc :signed-in? signed-in?))
 
-(rum/defc counter [number]
-  [:div {:on-click handle-counter-click}
-   (str "Clicked " number " times")])
-
-(rum/defc echo [message]
-  (let [[value set-value!] (rum/use-state "")]
-    [:div
-     [:h3 message]
-     [:div
-      [:label
-       "Message"
-       [:input {:type      "text"
-                :id        "echo-text"
-                :value     value
-                :on-change #(set-value! (.. % -target -value))}]]
-      [:input {:type "submit" :value "Submit" :on-click #(handle-echo-submit value)}]]]))
-
 (rum/defc content < rum/reactive []
   [:div {}
-   (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
-   (counter (:counter (rum/react app-state)))
-   (echo (:echo-content (rum/react app-state)))])
+   (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)])
 
 (defn mount [el]
   (rum/mount (content) el))

@@ -7,11 +7,6 @@
                                        #"\?"))
                   "api/"))
 
-(defn do-echo [message]
-  (go (let [response (<! (http/post (str api-url "echo")
-                                    {:json-params {:message message}}))]
-        (get-in response [:body :message]))))
-
 (defn get-oauth-uri []
   (go (let [response (<! (http/get (str api-url "oauthUri")))]
         (get-in response [:body :oauth-uri]))))

@@ -1,17 +1,12 @@
 (ns clj-trader.component.api
   (:require [clj-time.coerce :as tc]
             [clj-trader.component.td-brokerage :as td]
-            [clojure.string :refer [lower-case upper-case]]
             [com.stuartsierra.component :as component]
             [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.json :as json-mid]
             [ring.util.response :refer [resource-response response]]))
-
-(defn- echo-handler [{:keys [body]}]
-  (let [message (:message body)]
-    (response {:message (str (upper-case message) message (lower-case message))})))
 
 (defn- sign-in-handler [{:keys [config]} {:keys [td-brokerage]} {:keys [body]}]
   (let [code (:code body)]
@@ -44,7 +39,6 @@
 
 (defn- app-routes [td-brokerage config]
   (routes
-    (POST "/api/echo" [] echo-handler)
     (GET "/api/oauthUri" [] (fn [_] (response {:oauth-uri (get-in td-brokerage [:td-brokerage :oauth-uri])})))
     (GET "/" [] (resource-response "index.html" {:root "public"}))
     (POST "/api/signIn" [] (partial sign-in-handler config td-brokerage))
