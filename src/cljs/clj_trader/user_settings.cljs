@@ -3,7 +3,7 @@
             [cljs.core.async :refer [<! go]]
             [rum.core :as rum]))
 
-(defn handle-submit [event]
+(defn handle-submit [on-change event]
   (.preventDefault event)
   (let [form-data (->> event
                        .-target
@@ -15,22 +15,41 @@
                  (update :end-of-day-exit #(if % (parse-boolean %) false))
                  (update :trading-freq-seconds #(if-not (empty? %) (parse-long %) 0))
                  (update :position-size #(if-not (empty? %) (parse-long %) 0)))]
-    (prn data)))
+    (go (let [updated-settings (<! (api/patch-user-settings data))]
+          (on-change updated-settings)))))
 
-(rum/defc settings-panel []
-  [:form {:method "post" :on-submit handle-submit}
+(defn refresh-settings [current-settings on-change]
+  (go (let [settings (<! (api/get-user-settings))]
+        (when-not (= current-settings settings)
+          (on-change settings)))))
+
+(rum/defc settings-panel [user-settings change-settings]
+  (refresh-settings user-settings change-settings)
+  [:form {:method "post" :on-submit (partial handle-submit change-settings)}
    [:label
     "Enable automated trading:"
-    [:input {:type "checkbox" :name "enable-automated-trading" :value true}]]
+    [:input {:type            "checkbox"
+             :name            "enable-automated-trading"
+             :default-checked (:enable-automated-trading user-settings)
+             :value           true}]]
    [:label
     "Enable end-of-day exit:"
-    [:input {:type "checkbox" :name "end-of-day-exit" :value true}]]
+    [:input {:type            "checkbox"
+             :name            "end-of-day-exit"
+             :default-checked (:end-of-day-exit user-settings)
+             :value           true}]]
    [:label
     "Trading frequency (seconds):"
-    [:input {:type "number" :name "trading-freq-seconds" :min 1}]]
+    [:input {:type  "number"
+             :name  "trading-freq-seconds"
+             :default-value (:trading-freq-seconds user-settings)
+             :min   1}]]
    [:label
     "Position size ($):"
-    [:input {:type "number" :name "position-size" :min 1}]]
+    [:input {:type  "number"
+             :name  "position-size"
+             :default-value (:position-size user-settings)
+             :min   1}]]
    [:hr]
    [:hr]
    [:button {:type "reset"} "Reset"]

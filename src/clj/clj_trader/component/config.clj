@@ -8,7 +8,11 @@
 
   (start [this]
     (let [app-settings-file (or app-settings-file
-                                "app.edn")]
+                                "app.edn")
+          user-settings-from-file (if (.exists (io/file user-settings-file))
+                                    (->> (slurp user-settings-file)
+                                         edn/read-string)
+                                    {})]
       (println "Loading app settings from" app-settings-file)
       (println "Loading user settings from" user-settings-file)
       (assoc this :config (->> (slurp app-settings-file)
@@ -17,10 +21,9 @@
                                        :port     8080
                                        :ssl-port 8443}))
                   :user-settings-file user-settings-file
-                  :user-settings (if (.exists (io/file user-settings-file))
-                                   (atom (->> (slurp user-settings-file)
-                                              edn/read-string))
-                                   {}))))
+                  :user-settings (atom (merge {:trading-freq-seconds 5
+                                               :position-size        10}
+                                              user-settings-from-file)))))
 
   (stop [this]
     (assoc this :config nil)))

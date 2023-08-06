@@ -8,15 +8,19 @@
     [rum.core :as rum]))
 
 
-(defonce app-state (atom {:signed-in?   false}))
+(defonce app-state (atom {:signed-in?   false
+                          :user-settings {}}))
 
 (defn handle-auth-change [signed-in?]
   (swap! app-state assoc :signed-in? signed-in?))
 
+(defn handle-user-settings-change [user-settings]
+  (swap! app-state assoc :user-settings user-settings))
+
 (rum/defc content < rum/reactive []
   [:div.sidebar {}
    (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
-   (settings-panel)])
+   (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)])
 
 (defn mount [el]
   (rum/mount (content) el))

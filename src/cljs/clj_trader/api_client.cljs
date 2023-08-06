@@ -27,3 +27,8 @@
 (defn get-user-settings []
   (go (let [response (<! (http/get (str api-url "userSettings")))]
         (:body response))))
+
+(defn patch-user-settings [settings-patch]
+  (go (let [response (<! (http/patch (str api-url "userSettings")
+                                     {:json-params settings-patch}))]
+        (:body response))))
