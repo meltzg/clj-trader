@@ -40,7 +40,6 @@
         symbol-list)])
 
 (defn handle-type-symbol [symbol-list set-symbol-list! event]
-  (prn (.-key event))
   (when (= "Enter" (.-key event))
     (do
       (.preventDefault event)
