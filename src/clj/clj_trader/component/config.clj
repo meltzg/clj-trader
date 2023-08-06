@@ -37,5 +37,5 @@
     (str "https://" host ":" ssl-port "/")))
 
 (defn update-settings [{:keys [user-settings user-settings-file]} settings-patch]
-  (swap! user-settings merge settings-patch)
+  (reset! user-settings settings-patch)
   (spit user-settings-file @user-settings))

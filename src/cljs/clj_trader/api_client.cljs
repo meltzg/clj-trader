@@ -29,6 +29,6 @@
         (:body response))))
 
 (defn patch-user-settings [settings-patch]
-  (go (let [response (<! (http/patch (str api-url "userSettings")
+  (go (let [response (<! (http/put (str api-url "userSettings")
                                      {:json-params settings-patch}))]
         (:body response))))

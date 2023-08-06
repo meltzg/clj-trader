@@ -48,7 +48,7 @@
     (GET "/api/userSettings" [] (fn [_] (response (-> config
                                                       :user-settings
                                                       deref))))
-    (PATCH "/api/userSettings" [] (fn [{:keys [body]}]
+    (PUT "/api/userSettings" [] (fn [{:keys [body]}]
                                     (config/update-settings config body)
                                     (response (-> config
                                                   :user-settings
