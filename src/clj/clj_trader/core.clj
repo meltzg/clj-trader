@@ -7,9 +7,9 @@
   (:gen-class))
 
 
-(defn system [app-settings-file]
+(defn new-system [app-settings-file user-settings-file]
   (component/system-map
-    :config (config/make-config app-settings-file)
+    :config (config/make-config app-settings-file user-settings-file)
     :td-brokerage (component/using
                     (td-brokerage/make-td)
                     [:config])
@@ -21,7 +21,7 @@
 
 (defn -main
   [& args]
-  (let [system (component/start (system (first args)))
+  (let [system (component/start (new-system (first args) (second args)))
         lock (promise)
         stop (fn []
                (component/stop system)

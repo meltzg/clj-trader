@@ -1,5 +1,6 @@
 (ns clj-trader.component.api
   (:require [clj-time.coerce :as tc]
+            [clj-trader.component.config :as config]
             [clj-trader.component.td-brokerage :as td]
             [com.stuartsierra.component :as component]
             [compojure.core :refer :all]
@@ -44,6 +45,11 @@
     (POST "/api/signIn" [] (partial sign-in-handler config td-brokerage))
     (GET "/api/authStatus" [] (partial get-auth-status-handler config td-brokerage))
     (GET "/api/signOut" [] (partial sign-out-handler config td-brokerage))
+    (GET "/api/userSettings" [] (fn [_] (response (-> config
+                                                      :user-settings
+                                                      deref))))
+    (PATCH "/api/userSettings" [] (fn [{:keys [body]}]
+                                 (config/update-settings config body)))
     (route/resources "/")
     (route/not-found "Not Found")))
 

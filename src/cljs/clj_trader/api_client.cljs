@@ -23,3 +23,7 @@
 (defn sign-out []
   (go (let [response (<! (http/get (str api-url "signOut")))]
         (:body response))))
+
+(defn get-user-settings []
+  (go (let [response (<! (http/get (str api-url "userSettings")))]
+        (:body response))))

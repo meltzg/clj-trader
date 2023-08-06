@@ -2,6 +2,7 @@
   (:require
     [clj-trader.api-client :as api]
     [clj-trader.auth :refer [authenticator]]
+    [clj-trader.user-settings :refer [settings-panel]]
     [cljs.core.async :refer [<! go]]
     [goog.dom :as gdom]
     [rum.core :as rum]))
@@ -13,8 +14,9 @@
   (swap! app-state assoc :signed-in? signed-in?))
 
 (rum/defc content < rum/reactive []
-  [:div {}
-   (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)])
+  [:div.sidebar {}
+   (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
+   (settings-panel)])
 
 (defn mount [el]
   (rum/mount (content) el))

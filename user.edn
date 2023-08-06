@@ -1,0 +1,5 @@
+{:symbols                  []
+ :end-of-day-exit          false
+ :enable-automated-trading false
+ :trading-freq-seconds     5
+ :position-size            10}

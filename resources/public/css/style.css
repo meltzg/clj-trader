@@ -13,12 +13,30 @@
     padding: 0;
     text-align: center;
     width: 100%;
-  }
+}
 
 .signed-in {
-  background-color: green;
+    background-color: green;
 }
 
 .signed-out {
-  background-color: red;
+    background-color: red;
+}
+
+form {
+    display: inline-flex;
+    flex-direction: column;
+    margin-top: 2vh;
+    border-style: solid;
+    border-width: 2px;
+    border-color: grey;
+}
+
+hr {
+    width: 100%
+}
+
+.sidebar {
+    display: inline-flex;
+    flex-direction: column;
 }
