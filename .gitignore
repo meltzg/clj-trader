@@ -16,3 +16,4 @@ resources/public/cljs-out/
 *.dev.edn
 *.jks
 /.rebel_readline_history
+node_modules/

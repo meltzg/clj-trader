@@ -3,6 +3,7 @@
     [clj-trader.api-client :as api]
     [clj-trader.auth :refer [authenticator]]
     [clj-trader.user-settings :refer [settings-panel]]
+    [clj-trader.price-history :refer [price-history]]
     [cljs.core.async :refer [<! go]]
     [goog.dom :as gdom]
     [rum.core :as rum]))
@@ -20,7 +21,8 @@
 (rum/defc content < rum/reactive []
   [:div.sidebar {}
    (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
-   (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)])
+   (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)
+   (price-history)])
 
 (defn mount [el]
   (rum/mount (content) el))

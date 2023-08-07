@@ -1,5 +1,5 @@
 ^{:watch-dirs   ["test/cljs" "src/cljs"]
   :css-dirs     ["resources/public/css"]
   :auto-testing true
-  }
+  :auto-bundle  :webpack}
 {:main clj-trader.core}
