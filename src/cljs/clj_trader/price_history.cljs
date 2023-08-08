@@ -8,7 +8,7 @@
 
 (rum/defc price-history []
   [:div
-   (rum/adapt-class CanvasJSChart {:options {:title {:text "Hello World"}
-                                             :data [{:type "column"
-                                                     :dataPoints [{:x 10 :y 71}
-                                                                  {:x 20 :y 55}]}]}})])
+   [:> CanvasJSChart {:options {:title {:text "Hello World"}
+                                :data [{:type "column"
+                                        :dataPoints [{:x 10 :y 71}
+                                                     {:x 20 :y 55}]}]}}]])
