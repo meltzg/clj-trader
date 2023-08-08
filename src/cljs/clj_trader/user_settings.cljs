@@ -4,7 +4,10 @@
             [clojure.string :refer [upper-case]]
             [rum.core :as rum]))
 
-(defn handle-submit [on-change symbol-list event]
+(def component-state (atom {:symbol-list     []
+                            :tmp-symbol-list []}))
+
+(defn handle-submit [on-change event]
   (.preventDefault event)
   (let [form-data (->> event
                        .-target
@@ -17,71 +20,67 @@
                  (update :end-of-day-exit #(if % (parse-boolean %) false))
                  (update :trading-freq-seconds #(if-not (empty? %) (parse-long %) 0))
                  (update :position-size #(if-not (empty? %) (parse-long %) 0))
-                 (assoc :symbols symbol-list))]
+                 (assoc :symbols (:symbol-list @component-state)))]
     (go (let [updated-settings (<! (api/patch-user-settings data))]
           (on-change updated-settings)))))
 
-(defn refresh-settings [current-settings on-change set-symbols-list!]
+(defn refresh-settings [current-settings on-change]
   (go (let [settings (<! (api/get-user-settings))]
         (when-not (= current-settings settings)
-          (set-symbols-list! (:symbols settings))
+          (swap! component-state assoc :symbol-list (:symbols settings))
           (on-change settings)))))
 
-(defn render-symbols-list [symbol-list set-symbols-list!]
+(defn render-symbols-list [symbol-list]
   [:ul
    (map (fn [symbol]
           [:li
            symbol
-           [:button {:on-click #(set-symbols-list!
-                                  (remove (fn [current]
-                                            (= symbol current))
-                                          symbol-list))}
+           [:button {:on-click #(swap! component-state update :symbol-list
+                                       (fn [symbols]
+                                         (remove #{symbol} symbols)))}
             "Remove"]])
         symbol-list)])
 
-(defn handle-type-symbol [symbol-list set-symbol-list! event]
+(defn handle-type-symbol [event]
   (when (= "Enter" (.-key event))
     (do
       (.preventDefault event)
-      (set-symbol-list! (conj symbol-list (upper-case (.. event -target -value))))
+      (swap! component-state update :symbol-list conj (upper-case (.. event -target -value)))
       (set! (.. event -target -value) ""))))
 
-(rum/defc settings-panel [user-settings change-settings]
-  (let [[symbol-list set-symbol-list!] (rum/use-state [])]
-    (refresh-settings user-settings change-settings set-symbol-list!)
-    [:form {:method "post" :on-submit (partial handle-submit change-settings symbol-list)}
-     [:label
-      "Enable automated trading:"
-      [:input {:type            "checkbox"
-               :name            "enable-automated-trading"
-               :default-checked (:enable-automated-trading user-settings)
-               :value           true}]]
-     [:label
-      "Enable end-of-day exit:"
-      [:input {:type            "checkbox"
-               :name            "end-of-day-exit"
-               :default-checked (:end-of-day-exit user-settings)
-               :value           true}]]
-     [:label
-      "Trading frequency (seconds):"
-      [:input {:type          "number"
-               :name          "trading-freq-seconds"
-               :default-value (:trading-freq-seconds user-settings)
-               :min           1}]]
-     [:label
-      "Position size ($):"
-      [:input {:type          "number"
-               :name          "position-size"
-               :default-value (:position-size user-settings)
-               :min           1}]]
-     [:hr]
-     [:label
-      "Add symbol"
-      [:input {:name "new-symbol"
-               :on-key-down (partial handle-type-symbol
-                                     symbol-list
-                                     set-symbol-list!)}]]
-     (render-symbols-list symbol-list set-symbol-list!)
-     [:hr]
-     [:button {:type "reset"} "Reset"]
-     [:button {:type "submit"} "Save"]]))
+(rum/defc settings-panel < rum/reactive [user-settings change-settings]
+  (refresh-settings user-settings change-settings)
+  [:form {:method "post" :on-submit (partial handle-submit change-settings)}
+   [:label
+    "Enable automated trading:"
+    [:input {:type            "checkbox"
+             :name            "enable-automated-trading"
+             :default-checked (:enable-automated-trading user-settings)
+             :value           true}]]
+   [:label
+    "Enable end-of-day exit:"
+    [:input {:type            "checkbox"
+             :name            "end-of-day-exit"
+             :default-checked (:end-of-day-exit user-settings)
+             :value           true}]]
+   [:label
+    "Trading frequency (seconds):"
+    [:input {:type          "number"
+             :name          "trading-freq-seconds"
+             :default-value (:trading-freq-seconds user-settings)
+             :min           1}]]
+   [:label
+    "Position size ($):"
+    [:input {:type          "number"
+             :name          "position-size"
+             :default-value (:position-size user-settings)
+             :min           1}]]
+   [:hr]
+   [:label
+    "Add symbol"
+    [:input {:name        "new-symbol"
+             :on-key-down handle-type-symbol}]]
+   (render-symbols-list (:symbol-list (rum/react component-state)))
+   [:hr]
+   [:button {:type "reset"} "Reset"]
+   [:button {:type "submit"} "Save"]])
