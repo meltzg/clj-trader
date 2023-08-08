@@ -20,14 +20,18 @@
                  (update :end-of-day-exit #(if % (parse-boolean %) false))
                  (update :trading-freq-seconds #(if-not (empty? %) (parse-long %) 0))
                  (update :position-size #(if-not (empty? %) (parse-long %) 0))
-                 (assoc :symbols (:symbol-list @component-state)))]
+                 (assoc :symbols (:tmp-symbol-list @component-state)))]
     (go (let [updated-settings (<! (api/patch-user-settings data))]
           (on-change updated-settings)))))
+
+(defn handle-reset [_]
+  (swap! component-state assoc :tmp-symbol-list (:symbol-list @component-state)))
 
 (defn refresh-settings [current-settings on-change]
   (go (let [settings (<! (api/get-user-settings))]
         (when-not (= current-settings settings)
           (swap! component-state assoc :symbol-list (:symbols settings))
+          (swap! component-state assoc :tmp-symbol-list (:symbols settings))
           (on-change settings)))))
 
 (defn render-symbols-list [symbol-list]
@@ -35,9 +39,11 @@
    (map (fn [symbol]
           [:li
            symbol
-           [:button {:on-click #(swap! component-state update :symbol-list
-                                       (fn [symbols]
-                                         (remove #{symbol} symbols)))}
+           [:button {:on-click (fn [event]
+                                 (.preventDefault event)
+                                 (swap! component-state update :tmp-symbol-list
+                                        (fn [symbols]
+                                          (remove #{symbol} symbols))))}
             "Remove"]])
         symbol-list)])
 
@@ -45,12 +51,14 @@
   (when (= "Enter" (.-key event))
     (do
       (.preventDefault event)
-      (swap! component-state update :symbol-list conj (upper-case (.. event -target -value)))
+      (swap! component-state update :tmp-symbol-list #(sort (set (conj % (upper-case (.. event -target -value))))))
       (set! (.. event -target -value) ""))))
 
 (rum/defc settings-panel < rum/reactive [user-settings change-settings]
   (refresh-settings user-settings change-settings)
-  [:form {:method "post" :on-submit (partial handle-submit change-settings)}
+  [:form {:method    "post"
+          :on-submit (partial handle-submit change-settings)
+          :on-reset  handle-reset}
    [:label
     "Enable automated trading:"
     [:input {:type            "checkbox"
@@ -80,7 +88,7 @@
     "Add symbol"
     [:input {:name        "new-symbol"
              :on-key-down handle-type-symbol}]]
-   (render-symbols-list (:symbol-list (rum/react component-state)))
+   (render-symbols-list (:tmp-symbol-list (rum/react component-state)))
    [:hr]
    [:button {:type "reset"} "Reset"]
    [:button {:type "submit"} "Save"]])

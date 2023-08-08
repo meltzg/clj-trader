@@ -1,7 +1,8 @@
 (ns clj-trader.component.config
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [clojure.pprint :refer [pprint]]))
 
 (defrecord Config [app-settings-file user-settings-file]
   component/Lifecycle
@@ -38,4 +39,4 @@
 
 (defn update-settings [{:keys [user-settings user-settings-file]} settings-patch]
   (reset! user-settings settings-patch)
-  (spit user-settings-file @user-settings))
+  (spit user-settings-file (with-out-str (pprint @user-settings))))
