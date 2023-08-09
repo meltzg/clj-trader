@@ -1,7 +1,8 @@
 (ns clj-trader.auth
   (:require [clj-trader.api-client :as api]
             [cljs.core.async :refer [<! go]]
-            [rum.core :as rum]))
+            [rum.core :as rum]
+            [cljs-material-ui.core :as mui]))
 
 (defn initiate-auth []
   (go
@@ -18,14 +19,22 @@
     [:div.signin-status.signed-in "Connected"]
     [:div.signin-status.signed-out "Disconnected"]))
 
+(defn stack [& args] (mui/create-mui-el "Stack" args))
+
 (rum/defc authenticator [signed-in? change-signed-in]
   (refresh-auth-status signed-in? change-signed-in)
   [:div.authenticator
    (auth-status signed-in?)
    (if signed-in?
-     [:div
-      [:button {:on-click #(refresh-auth-status signed-in? change-signed-in)} "Refresh Status"]
-      [:button {:on-click (fn []
-                            (go (<! (api/sign-out))
-                                (refresh-auth-status signed-in? change-signed-in)))} "Sign Out"]]
-     [:button {:on-click initiate-auth} "Sign In"])])
+     (stack {:direction "row" :spacing 0.5}
+            (mui/button {:variant "contained"
+                         :on-click #(refresh-auth-status signed-in? change-signed-in)}
+                        "Refresh Status")
+            (mui/button {:variant "contained"
+                         :on-click (fn []
+                                     (go (<! (api/sign-out))
+                                         (refresh-auth-status signed-in? change-signed-in)))}
+                        "Sign Out"))
+     (mui/button {:variant "contained"
+                  :on-click initiate-auth}
+                 "Sign In"))])
