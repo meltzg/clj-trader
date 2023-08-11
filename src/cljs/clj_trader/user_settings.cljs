@@ -1,10 +1,10 @@
 (ns clj-trader.user-settings
-  (:require [clj-trader.api-client :as api]
+  (:require [clj-trader.utils :refer [api-url]]
             [clojure.string :refer [upper-case]]
             [rum.core :as rum]
             [cljs-material-ui.core :as mui]
             [clj-trader.mui-extension :as mui-x]
-            [ajax.core :refer [GET PUT]]))
+            [ajax.core :as ajax]))
 
 (def component-state (atom {:settings {}
                             :symbol   nil}))
@@ -12,7 +12,7 @@
 (defn refresh-settings-mixin []
   {:will-mount
    (fn [state]
-     (GET (str api/api-url "userSettings")
+     (ajax/GET (str api-url "userSettings")
           {:handler         (fn [data]
                               (swap! component-state assoc :settings data))
            :response-format :json
@@ -20,7 +20,7 @@
      state)})
 
 (defn handle-save [on-change]
-  (PUT (str api/api-url "userSettings")
+  (ajax/PUT (str api-url "userSettings")
        {:params          (:settings @component-state)
         :handler         (fn [data]
                            (swap! component-state assoc :settings data)

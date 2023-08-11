@@ -1,12 +1,12 @@
 (ns clj-trader.core
   (:require
-    [clj-trader.api-client :as api]
+    [clj-trader.utils :refer [api-url]]
     [clj-trader.auth :refer [authenticator]]
     [clj-trader.user-settings :refer [settings-panel]]
     [clj-trader.price-history :refer [price-history]]
-    [cljs.core.async :refer [<! go]]
     [goog.dom :as gdom]
-    [rum.core :as rum]))
+    [rum.core :as rum]
+    [ajax.core :as ajax]))
 
 
 (defonce app-state (atom {:signed-in?    false
@@ -34,15 +34,19 @@
 
 (defn mount-app-element []
   (when (not-empty (.-search (.-location js/window)))
-    (go
-      (let [code (-> js/window
-                     (.. -location -search)
-                     js/URLSearchParams.
-                     (.get "code"))
-            sign-in-resp (<! (api/sign-in code))]
-        (prn sign-in-resp)
-        (.replace (.-location js/window)
-                  (.-origin (.-location js/window))))))
+    (let [code (-> js/window
+                   (.. -location -search)
+                   js/URLSearchParams.
+                   (.get "code"))]
+      (ajax/POST (str api-url "signIn")
+                 {:params          {:code code}
+                  :format          :json
+                  :response-format :json
+                  :keywords?       true?
+                  :handler         (fn [response]
+                                     (prn response)
+                                     (.replace (.-location js/window)
+                                               (.-origin (.-location js/window))))})))
   (when-let [el (get-app-element)]
     (mount el)))
 

@@ -18,8 +18,6 @@
                  ;; CLJS Dependencies
                  [org.clojure/clojurescript "1.11.60"]
                  [rum "0.12.11"]
-                 [sablono "0.8.6"]
-                 [cljs-http "0.1.46"]
                  [cljsjs/material-ui "5.11.1-0"]
                  [cljs-material-ui "1.0.01"]
                  [cljs-ajax "0.8.4"]]

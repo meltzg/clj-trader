@@ -1,19 +1,24 @@
 (ns clj-trader.auth
-  (:require [clj-trader.api-client :as api]
-            [cljs.core.async :refer [<! go]]
+  (:require [clj-trader.utils :refer [api-url]]
             [rum.core :as rum]
             [cljs-material-ui.core :as mui]
-            [clj-trader.mui-extension :as mui-x]))
+            [clj-trader.mui-extension :as mui-x]
+            [ajax.core :as ajax]))
 
 (defn initiate-auth []
-  (go
-    (let [oauth-uri (<! (api/get-oauth-uri))]
-      (.replace (.-location js/window) oauth-uri))))
+  (ajax/GET (str api-url "oauthUri")
+            {:response-format :json
+             :keywords? true
+             :handler (fn [{:keys [oauth-uri]}]
+                        (.replace (.-location js/window) oauth-uri))}))
 
 (defn refresh-auth-status [current-state on-change]
-  (go (let [auth-status (<! (api/auth-status))]
-        (when-not (= current-state (:signed-in? auth-status))
-          (on-change (:signed-in? auth-status))))))
+  (ajax/GET (str api-url "authStatus")
+            {:response-format :json
+             :keywords? true
+             :handler (fn [{:keys [signed-in?]}]
+                        (when-not (= current-state signed-in?)
+                          (on-change signed-in?)))}))
 
 (rum/defc auth-status [signed-in?]
   (if signed-in?
@@ -31,8 +36,8 @@
                         "Refresh Status")
             (mui/button {:variant "contained"
                          :on-click (fn []
-                                     (go (<! (api/sign-out))
-                                         (refresh-auth-status signed-in? change-signed-in)))}
+                                     (ajax/GET (str api-url "signOut")
+                                               {:handler #(refresh-auth-status signed-in? change-signed-in)}))}
                         "Sign Out"))
      (mui/button {:variant "contained"
                   :on-click initiate-auth}

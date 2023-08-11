@@ -1,6 +1,5 @@
-(ns clj-trader.utils
-  (:require
-    [sablono.util]))
+(ns clj-trader.utils)
 
-(defn attrs [a]
-  (clj->js (sablono.util/html-to-dom-attrs a)))
+(def api-url (str (first (string/split (.-href (.-location js/window))
+                                       #"\?"))
+                  "api/"))
