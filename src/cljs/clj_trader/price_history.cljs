@@ -7,8 +7,6 @@
 
 (def CanvasJSChart (.. CanvasJSReact -default -CanvasJSChart))
 
-(prn (rum/adapt-class DateTimePicker {}))
-
 (def component-state (atom {:use-periods    true
                             :use-end-date   false
                             :period-type    :day
@@ -86,16 +84,19 @@
          :on-change #(swap! component-state assoc :frequency (.. % -target -value))}
         (map #(mui/menu-item {:key % :value %} %) ((:frequency-type (rum/react component-state)) valid-frequencies))))))
 
-(rum/defc start-end-control < rum/reactive []
-  (mui-x/stack
-    {:direction "row" :spacing 1}
-    ))
-
-(rum/defc price-history [{:keys [symbols]}]
+(rum/defc price-history < rum/reactive [{:keys [symbols]}]
   [:div
-   [:> CanvasJSChart {:options {:title {:text "Hello World"}
-                                :data  [{:type       "column"
-                                         :dataPoints [{:x 10 :y 71}
-                                                      {:x 20 :y 55}]}]}}]
-   (frequency-period-control)
-   (start-end-control)])
+   [:> CanvasJSChart {:options {:title            {:text "Price History"}
+                                :zoomEnabled      true
+                                :animationEnabled true
+                                :exportEnabled    true
+                                :axis             {:prefix "$"
+                                                   :title  "Price (USD)"}
+                                :data             (:chart-data (rum/react component-state))}}]
+   (mui-x/stack
+     {:direction "row" :spacing 1}
+     (frequency-period-control)
+     (mui/button
+       {:variant "contained"
+        :on-click #()}
+       "Refresh"))])
