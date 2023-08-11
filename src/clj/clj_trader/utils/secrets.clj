@@ -1,4 +1,8 @@
-(ns clj-trader.utils.secrets)
+(ns clj-trader.utils.secrets
+  (:import (java.io FileInputStream FileOutputStream)
+           (java.security KeyStore KeyStore$PasswordProtection KeyStore$SecretKeyEntry)
+           (javax.crypto SecretKeyFactory)
+           (javax.crypto.spec PBEKeySpec)))
 
 (defn make-new-keystore [keystore-password]
   (let [ks (KeyStore/getInstance "JCEKS")]
