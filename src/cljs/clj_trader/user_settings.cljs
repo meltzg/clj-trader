@@ -109,8 +109,12 @@
       {:direction "row"
        :spacing   1}
       (mui/button {:variant  "contained"
-                   :on-click handle-save}
+                   :on-click handle-save
+                   :disabled (= (:settings (rum/react component-state))
+                                (:initial-settings (rum/react component-state)))}
                   "Save")
       (mui/button {:variant  "contained"
-                   :on-click #(swap! component-state assoc :settings (:initial-settings @component-state))}
+                   :on-click #(swap! component-state assoc :settings (:initial-settings @component-state))
+                   :disabled (= (:settings (rum/react component-state))
+                                   (:initial-settings (rum/react component-state)))}
                   "Reset"))))
