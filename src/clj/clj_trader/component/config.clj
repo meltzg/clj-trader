@@ -1,8 +1,8 @@
 (ns clj-trader.component.config
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [com.stuartsierra.component :as component]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.pprint :refer [pprint]]
+            [com.stuartsierra.component :as component]))
 
 (defrecord Config [app-settings-file user-settings-file]
   component/Lifecycle

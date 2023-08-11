@@ -49,10 +49,10 @@
                                                       :user-settings
                                                       deref))))
     (PUT "/api/userSettings" [] (fn [{:keys [body]}]
-                                    (config/update-settings config body)
-                                    (response (-> config
-                                                  :user-settings
-                                                  deref))))
+                                  (config/update-settings config body)
+                                  (response (-> config
+                                                :user-settings
+                                                deref))))
     (route/resources "/")
     (route/not-found "Not Found")))
 

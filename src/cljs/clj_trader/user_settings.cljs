@@ -1,10 +1,10 @@
 (ns clj-trader.user-settings
-  (:require [clj-trader.utils :refer [api-url]]
-            [clojure.string :refer [upper-case]]
-            [rum.core :as rum]
-            [cljs-material-ui.core :as mui]
+  (:require [ajax.core :as ajax]
             [clj-trader.mui-extension :as mui-x]
-            [ajax.core :as ajax]))
+            [clj-trader.utils :refer [api-url]]
+            [cljs-material-ui.core :as mui]
+            [clojure.string :refer [upper-case]]
+            [rum.core :as rum]))
 
 (def component-state (atom {:settings {}
                             :symbol   nil}))
@@ -13,21 +13,21 @@
   {:will-mount
    (fn [state]
      (ajax/GET (str api-url "userSettings")
-          {:handler         (fn [data]
-                              (swap! component-state assoc :settings data))
-           :response-format :json
-           :keywords?       true})
+               {:handler         (fn [data]
+                                   (swap! component-state assoc :settings data))
+                :response-format :json
+                :keywords?       true})
      state)})
 
 (defn handle-save [on-change]
   (ajax/PUT (str api-url "userSettings")
-       {:params          (:settings @component-state)
-        :handler         (fn [data]
-                           (swap! component-state assoc :settings data)
-                           (on-change data))
-        :format          :json
-        :response-format :json
-        :keywords?       true}))
+            {:params          (:settings @component-state)
+             :handler         (fn [data]
+                                (swap! component-state assoc :settings data)
+                                (on-change data))
+             :format          :json
+             :response-format :json
+             :keywords?       true}))
 
 (defn handle-type-symbol [event]
   (when (= "Enter" (.-key event))

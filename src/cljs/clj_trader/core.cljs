@@ -1,12 +1,12 @@
 (ns clj-trader.core
   (:require
-    [clj-trader.utils :refer [api-url]]
+    [ajax.core :as ajax]
     [clj-trader.auth :refer [authenticator]]
-    [clj-trader.user-settings :refer [settings-panel]]
     [clj-trader.price-history :refer [price-history]]
+    [clj-trader.user-settings :refer [settings-panel]]
+    [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
-    [rum.core :as rum]
-    [ajax.core :as ajax]))
+    [rum.core :as rum]))
 
 
 (defonce app-state (atom {:signed-in?    false
