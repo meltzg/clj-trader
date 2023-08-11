@@ -10,7 +10,7 @@
 
 
 (defonce app-state (atom {:signed-in?    false
-                          :user-settings {}}))
+                          :user-settings nil}))
 
 (defn handle-auth-change [signed-in?]
   (swap! app-state assoc :signed-in? signed-in?))

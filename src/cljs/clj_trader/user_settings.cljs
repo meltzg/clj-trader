@@ -1,6 +1,5 @@
 (ns clj-trader.user-settings
   (:require [clj-trader.api-client :as api]
-            [cljs.core.async :refer [<! go]]
             [clojure.string :refer [upper-case]]
             [rum.core :as rum]
             [cljs-material-ui.core :as mui]
@@ -13,21 +12,19 @@
 (defn refresh-settings-mixin []
   {:will-mount
    (fn [state]
-     (prn "will mount")
      (GET (str api/api-url "userSettings")
           {:handler         (fn [data]
-                              (swap! component-state assoc :settings data)
-                              (swap! component-state assoc :initial-settings data))
+                              (swap! component-state assoc :settings data))
            :response-format :json
            :keywords?       true})
      state)})
 
-(defn handle-save []
+(defn handle-save [on-change]
   (PUT (str api/api-url "userSettings")
        {:params          (:settings @component-state)
         :handler         (fn [data]
                            (swap! component-state assoc :settings data)
-                           (swap! component-state assoc :initial-settings data))
+                           (on-change data))
         :format          :json
         :response-format :json
         :keywords?       true}))
@@ -36,8 +33,7 @@
   (when (= "Enter" (.-key event))
     (do
       (swap! component-state update-in [:settings :symbols] #(sort (set (conj % (upper-case (.. event -target -value))))))
-      (swap! component-state assoc :symbol nil)
-      (prn @component-state))))
+      (swap! component-state assoc :symbol nil))))
 
 (defn render-symbol-item [symbol]
   (mui/list-item
@@ -52,7 +48,9 @@
                                      (remove #{symbol} symbols)))}
                 "X")))
 
-(rum/defc settings-panel < rum/reactive (refresh-settings-mixin) [user-settings change-settings]
+(rum/defc settings-panel < rum/reactive (refresh-settings-mixin) [initial-settings change-settings]
+  (when (empty? initial-settings)
+    (change-settings (:settings @component-state)))
   (mui-x/stack
     {:direction       "column"
      :spacing         1
@@ -109,12 +107,12 @@
       {:direction "row"
        :spacing   1}
       (mui/button {:variant  "contained"
-                   :on-click handle-save
+                   :on-click (fn [] (handle-save change-settings))
                    :disabled (= (:settings (rum/react component-state))
-                                (:initial-settings (rum/react component-state)))}
+                                initial-settings)}
                   "Save")
       (mui/button {:variant  "contained"
-                   :on-click #(swap! component-state assoc :settings (:initial-settings @component-state))
+                   :on-click #(swap! component-state assoc :settings initial-settings)
                    :disabled (= (:settings (rum/react component-state))
-                                   (:initial-settings (rum/react component-state)))}
+                                initial-settings)}
                   "Reset"))))
