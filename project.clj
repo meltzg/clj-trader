@@ -21,7 +21,8 @@
                  [sablono "0.8.6"]
                  [cljs-http "0.1.46"]
                  [cljsjs/material-ui "5.11.1-0"]
-                 [cljs-material-ui "1.0.01"]]
+                 [cljs-material-ui "1.0.01"]
+                 [cljs-ajax "0.8.4"]]
   :plugins [[lein-ancient "0.7.0"]]
   :main ^:skip-aot clj-trader.core
   :target-path "target/%s"
