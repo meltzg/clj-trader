@@ -14,15 +14,18 @@
 (defmulti command->request :command)
 (defmulti execute-command :command)
 
-(defn- format-sign-in-response [{:keys [body]}]
-  (let [{:keys [access_token
-                expires_in
-                refresh_token
-                refresh_token_expires_in]} body]
-    {:access-token       access_token
-     :refresh-token      refresh_token
-     :expires-at         (t/from-now (t/seconds expires_in))
-     :refresh-expires-at (t/from-now (t/seconds refresh_token_expires_in))}))
+(defn- format-sign-in-response [{:keys [access_token
+                                        expires_in
+                                        refresh_token
+                                        refresh_token_expires_in]}]
+  {:access-token       access_token
+   :refresh-token      refresh_token
+   :expires-at         (t/from-now (t/seconds expires_in))
+   :refresh-expires-at (t/from-now (t/seconds refresh_token_expires_in))})
+
+(defn- format-price-history [{:keys [symbol candles]}]
+  {:symbol        symbol
+   :price-candles (map #(select-keys % [:open :high :low :close :datetime]) candles)})
 
 (defn save-access-info! [{:keys [keystore]} keystore-pass access-info]
   (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
@@ -111,6 +114,7 @@
 (defmethod execute-command :sign-in [{:keys [td-brokerage config] :as command}]
   (->> (command->request command)
        make-request
+       :body
        format-sign-in-response
        (save-access-info! td-brokerage (-> config :config :keystore-pass)))
   (load-access-info td-brokerage (-> config :config :keystore-pass)))
@@ -120,6 +124,7 @@
     (->> (assoc command :refresh-token refresh-token)
          command->request
          make-request
+         :body
          format-sign-in-response
          (save-access-info! td-brokerage (-> config :config :keystore-pass)))
     (load-access-info td-brokerage (-> config :config :keystore-pass))))
@@ -134,12 +139,13 @@
   (load-access-info td-brokerage (-> config :config :keystore-pass)))
 
 (defmethod execute-command :price-history [{:keys [td-brokerage config] :as command}]
-  (doall (map (fn [symbol]
-                (->> (assoc command :symbol symbol)
-                     command->request
-                     (make-authenticated-request td-brokerage config)
-                     :body))
-              (-> config :user-settings deref :symbols))))
+  (map (fn [symbol]
+         (->> (assoc command :symbol symbol)
+              command->request
+              (make-authenticated-request td-brokerage config)
+              :body
+              format-price-history))
+       (-> config :user-settings deref :symbols)))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))
