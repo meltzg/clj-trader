@@ -6,6 +6,7 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.defaults :as defaults]
             [ring.middleware.json :as json-mid]
             [ring.util.response :refer [resource-response response]]))
 
@@ -20,7 +21,7 @@
                                   (tc/to-string %)
                                   %))))))
 
-(defn- get-auth-status-handler [config {:keys [td-brokerage]} _]
+(defn- get-auth-status-handler [config {:keys [td-brokerage]} & _]
   (response (-> (td/execute-command {:command      :auth-status
                                      :config       config
                                      :td-brokerage td-brokerage})
@@ -29,7 +30,7 @@
                                 (tc/to-string %)
                                 %)))))
 
-(defn- sign-out-handler [config {:keys [td-brokerage]} _]
+(defn- sign-out-handler [config {:keys [td-brokerage]} & _]
   (response (-> (td/execute-command {:command      :sign-out
                                      :config       config
                                      :td-brokerage td-brokerage})
@@ -37,6 +38,15 @@
                 (update-vals #(if (instance? org.joda.time.DateTime %)
                                 (tc/to-string %)
                                 %)))))
+
+(defn- price-history-handler [config {:keys [td-brokerage]} params & _]
+  (response (td/execute-command {:command      :price-history
+                                 :config       config
+                                 :td-brokerage td-brokerage
+                                 :params       (merge params
+                                                      (update-vals
+                                                        (select-keys params [:period-type :frequency-type])
+                                                        keyword))})))
 
 (defn- app-routes [td-brokerage config]
   (routes
@@ -53,6 +63,7 @@
                                   (response (-> config
                                                 :user-settings
                                                 deref))))
+    (GET "/api/priceHistory" {params :params} (partial price-history-handler config td-brokerage params))
     (route/resources "/")
     (route/not-found "Not Found")))
 
@@ -65,7 +76,9 @@
       (assoc this :server (run-jetty
                             (-> (app-routes td-brokerage config)
                                 (json-mid/wrap-json-body {:key-fn keyword})
-                                (json-mid/wrap-json-response))
+                                json-mid/wrap-json-response
+                                (defaults/wrap-defaults {:params {:keywordize true
+                                                                  :urlencoded true}}))
                             {:ssl?         true
                              :host         host
                              :port         port
