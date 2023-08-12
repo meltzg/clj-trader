@@ -11,6 +11,9 @@
 (def api-root "https://api.tdameritrade.com/v1")
 (def secrets-file "td-secrets.jks")
 
+(defmulti command->request :command)
+(defmulti execute-command :command)
+
 (defn- format-sign-in-response [{:keys [body]}]
   (let [{:keys [access_token
                 expires_in
@@ -49,12 +52,23 @@
     (println "make request" request)
     (http/request request)))
 
-(defn- make-authenticated-request [td-brokerage config request]
-  (let [{:keys [access-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
-    (make-request (assoc-in request [:options :headers :authorization]
-                            (str "Bearer " access-token)))))
-
-(defmulti command->request :command)
+(defn- make-authenticated-request
+  ([td-brokerage config request]
+   (make-authenticated-request td-brokerage config request true))
+  ([td-brokerage config request refresh-tokens?]
+   (let [{:keys [access-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
+     (try
+       (make-request (assoc-in request [:options :headers :authorization]
+                               (str "Bearer " access-token)))
+       (catch Exception e
+         (if (and refresh-tokens? (= 401 (-> e ex-data :status)))
+           (do
+             (println "refresh token and retry")
+             (execute-command {:command      :refresh-access-token
+                               :td-brokerage td-brokerage
+                               :config       config})
+             (make-authenticated-request td-brokerage config request false))
+           (throw e)))))))
 
 (defmethod command->request :sign-in [{:keys [code config]}]
   (let [body {:grant_type   "authorization_code"
@@ -62,6 +76,18 @@
               :code         code
               :client_id    (-> config :config :client-id)
               :redirect_uri (get-redirect-uri config)}]
+    {:method  :post
+     :path    "/oauth2/token"
+     :options {:headers {:content-type "application/x-www-form-urlencoded"}
+               :body    (form-encode body)
+               :as      :json}}))
+
+(defmethod command->request :refresh-access-token [{:keys [refresh-token config]}]
+  (let [body {:grant_type    "refresh_token"
+              :client_id     (-> config :config :client-id)
+              :redirect_uri  (get-redirect-uri config)
+              :refresh_token refresh-token
+              :access_type   "offline"}]
     {:method  :post
      :path    "/oauth2/token"
      :options {:headers {:content-type "application/x-www-form-urlencoded"}
@@ -82,14 +108,21 @@
      :options {:query-params query-params
                :as           :json}}))
 
-(defmulti execute-command :command)
-
 (defmethod execute-command :sign-in [{:keys [td-brokerage config] :as command}]
   (->> (command->request command)
        make-request
        format-sign-in-response
        (save-access-info! td-brokerage (-> config :config :keystore-pass)))
   (load-access-info td-brokerage (-> config :config :keystore-pass)))
+
+(defmethod execute-command :refresh-access-token [{:keys [td-brokerage config] :as command}]
+  (let [{:keys [refresh-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
+    (->> (assoc command :refresh-token refresh-token)
+         command->request
+         make-request
+         format-sign-in-response
+         (save-access-info! td-brokerage (-> config :config :keystore-pass)))
+    (load-access-info td-brokerage (-> config :config :keystore-pass))))
 
 (defmethod execute-command :auth-status [{:keys [td-brokerage config]}]
   (load-access-info td-brokerage (-> config :config :keystore-pass)))
