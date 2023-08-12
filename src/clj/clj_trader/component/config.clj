@@ -33,7 +33,7 @@
   (map->Config {:app-settings-file  app-settings-file
                 :user-settings-file user-settings-file}))
 
-(defn get-redirect-uri [config]
+(defn get-redirect-uri [{:keys [config]}]
   (let [{:keys [host ssl-port]} config]
     (str "https://" host ":" ssl-port "/")))
 

@@ -11,11 +11,6 @@
 (def api-root "https://api.tdameritrade.com/v1")
 (def secrets-file "td-secrets.jks")
 
-(defn- make-request [{:keys [method path options]}]
-  (cond (= method :post)
-        (http/post (str api-root path)
-                   options)))
-
 (defn- format-sign-in-response [{:keys [body]}]
   (let [{:keys [access_token
                 expires_in
@@ -47,13 +42,25 @@
                          :expires-at expires-at
                          :refresh-expires-at (tc/from-string (:refresh-expires-at access-info))))))
 
+(defn- make-request [{:keys [method path options]}]
+  (let [request (merge options {:method                method
+                                :url                   (str api-root path)
+                                :throw-entire-message? true})]
+    (println "make request" request)
+    (http/request request)))
+
+(defn- make-authenticated-request [td-brokerage config request]
+  (let [{:keys [access-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
+    (make-request (assoc-in request [:options :headers :authorization]
+                            (str "Bearer " access-token)))))
+
 (defmulti command->request :command)
 
 (defmethod command->request :sign-in [{:keys [code config]}]
   (let [body {:grant_type   "authorization_code"
               :access_type  "offline"
               :code         code
-              :client_id    (:client-id config)
+              :client_id    (-> config :config :client-id)
               :redirect_uri (get-redirect-uri config)}]
     {:method  :post
      :path    "/oauth2/token"
@@ -61,23 +68,45 @@
                :body    (form-encode body)
                :as      :json}}))
 
+(defmethod command->request :price-history [{:keys [params symbol]}]
+  (let [{:keys [period-type
+                periods
+                frequency-type
+                frequency]} params
+        query-params {:periodType    (name period-type)
+                      :period        periods
+                      :frequencyType (name frequency-type)
+                      :frequency     frequency}]
+    {:method  :get
+     :path    (str "/marketdata/" symbol "/pricehistory")
+     :options {:query-params query-params
+               :as           :json}}))
+
 (defmulti execute-command :command)
 
 (defmethod execute-command :sign-in [{:keys [td-brokerage config] :as command}]
   (->> (command->request command)
        make-request
        format-sign-in-response
-       (save-access-info! td-brokerage (:keystore-pass config)))
-  (load-access-info td-brokerage (:keystore-pass config)))
+       (save-access-info! td-brokerage (-> config :config :keystore-pass)))
+  (load-access-info td-brokerage (-> config :config :keystore-pass)))
 
 (defmethod execute-command :auth-status [{:keys [td-brokerage config]}]
-  (load-access-info td-brokerage (:keystore-pass config)))
+  (load-access-info td-brokerage (-> config :config :keystore-pass)))
 
 (defmethod execute-command :sign-out [{:keys [td-brokerage config]}]
   (doall (map #(.deleteEntry (:keystore td-brokerage) (name %))
               [:access-token :refresh-token :expires-at :refresh-expires-at]))
-  (secrets/save-keystore! (:keystore td-brokerage) (:keystore-pass config) secrets-file)
-  (load-access-info td-brokerage (:keystore-pass config)))
+  (secrets/save-keystore! (:keystore td-brokerage) (-> config :config :keystore-pass) secrets-file)
+  (load-access-info td-brokerage (-> config :config :keystore-pass)))
+
+(defmethod execute-command :price-history [{:keys [td-brokerage config] :as command}]
+  (doall (map (fn [symbol]
+                (->> (assoc command :symbol symbol)
+                     command->request
+                     (make-authenticated-request td-brokerage config)
+                     :body))
+              (-> config :user-settings deref :symbols))))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))
@@ -91,7 +120,7 @@
 
   (start [this]
     (assoc this :td-brokerage {:oauth-uri (str "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri="
-                                               (get-redirect-uri (:config config))
+                                               (get-redirect-uri config)
                                                "&client_id="
                                                (get-in config [:config :client-id])
                                                "%40AMER.OAUTHAP")

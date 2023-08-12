@@ -9,7 +9,7 @@
             [ring.middleware.json :as json-mid]
             [ring.util.response :refer [resource-response response]]))
 
-(defn- sign-in-handler [{:keys [config]} {:keys [td-brokerage]} {:keys [body]}]
+(defn- sign-in-handler [config {:keys [td-brokerage]} {:keys [body]}]
   (let [code (:code body)]
     (response (-> (td/execute-command {:command      :sign-in
                                        :code         code
@@ -20,7 +20,7 @@
                                   (tc/to-string %)
                                   %))))))
 
-(defn- get-auth-status-handler [{:keys [config]} {:keys [td-brokerage]} _]
+(defn- get-auth-status-handler [config {:keys [td-brokerage]} _]
   (response (-> (td/execute-command {:command      :auth-status
                                      :config       config
                                      :td-brokerage td-brokerage})
@@ -29,7 +29,7 @@
                                 (tc/to-string %)
                                 %)))))
 
-(defn- sign-out-handler [{:keys [config]} {:keys [td-brokerage]} _]
+(defn- sign-out-handler [config {:keys [td-brokerage]} _]
   (response (-> (td/execute-command {:command      :sign-out
                                      :config       config
                                      :td-brokerage td-brokerage})
