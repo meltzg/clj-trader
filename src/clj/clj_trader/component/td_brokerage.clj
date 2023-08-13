@@ -3,6 +3,7 @@
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
             [clj-trader.component.config :refer [get-redirect-uri]]
+            [clj-trader.utils.helpers :refer [?assoc]]
             [clj-trader.utils.secrets :as secrets]
             [clojure.java.io :as io]
             [com.stuartsierra.component :as component]
@@ -101,11 +102,15 @@
   (let [{:keys [period-type
                 periods
                 frequency-type
-                frequency]} params
-        query-params {:periodType    (name period-type)
-                      :period        periods
-                      :frequencyType (name frequency-type)
-                      :frequency     frequency}]
+                frequency
+                start-date
+                end-date]} params
+        query-params (-> {:periodType    (name period-type)
+                          :frequencyType (name frequency-type)
+                          :frequency     frequency}
+                         (conj (when-not (and start-date end-date) [:period periods]))
+                         (?assoc :startDate start-date)
+                         (?assoc :endDate end-date))]
     {:method  :get
      :path    (str "/marketdata/" symbol "/pricehistory")
      :options {:query-params query-params

@@ -67,10 +67,14 @@
             {:format          :edn
              :response-format :json
              :keywords?       true
-             :params          {:period-type    (:period-type @component-state)
-                               :periods        (:periods @component-state)
-                               :frequency-type (:frequency-type @component-state)
-                               :frequency      (:frequency @component-state)}
+             :params          (-> {:period-type    (:period-type @component-state)
+                                   :periods        (:periods @component-state)
+                                   :frequency-type (:frequency-type @component-state)
+                                   :frequency      (:frequency @component-state)}
+                                  (conj (when (:use-start-date @component-state)
+                                          [:start-date (.getTime (:start-date @component-state))]))
+                                  (conj (when (:use-end-date @component-state)
+                                          [:end-date (.getTime (:end-date @component-state))])))
              :handler         (fn [price-histories]
                                 (swap! component-state
                                        assoc
@@ -140,27 +144,27 @@
     (mui-x/stack
       {:direction "row" :spacing 0.5}
       (mui/form-control-label
-      {:label   "Use Start Date"
-       :control (mui/switch {:on-change #(swap! component-state
-                                                assoc
-                                                :use-start-date
-                                                (.. % -target -checked))
-                             :checked   (:use-start-date (rum/react component-state))})})
-    (when (:use-start-date (rum/react component-state))
-      (date-selector (:start-date (rum/react component-state))
-                     #(swap! component-state assoc :start-date %))))
+        {:label   "Use Start Date"
+         :control (mui/switch {:on-change #(swap! component-state
+                                                  assoc
+                                                  :use-start-date
+                                                  (.. % -target -checked))
+                               :checked   (:use-start-date (rum/react component-state))})})
+      (when (:use-start-date (rum/react component-state))
+        (date-selector (:start-date (rum/react component-state))
+                       #(swap! component-state assoc :start-date %))))
     (mui-x/stack
       {:direction "row" :soacing 0.5}
       (mui/form-control-label
-      {:label   "Use End Date"
-       :control (mui/switch {:on-change #(swap! component-state
-                                                assoc
-                                                :use-end-date
-                                                (.. % -target -checked))
-                             :checked   (:use-end-date (rum/react component-state))})})
-    (when (:use-end-date (rum/react component-state))
-      (date-selector (:end-date (rum/react component-state))
-                     #(swap! component-state assoc :end-date %))))))
+        {:label   "Use End Date"
+         :control (mui/switch {:on-change #(swap! component-state
+                                                  assoc
+                                                  :use-end-date
+                                                  (.. % -target -checked))
+                               :checked   (:use-end-date (rum/react component-state))})})
+      (when (:use-end-date (rum/react component-state))
+        (date-selector (:end-date (rum/react component-state))
+                       #(swap! component-state assoc :end-date %))))))
 
 (rum/defc chart-settings []
   (mui-x/stack
