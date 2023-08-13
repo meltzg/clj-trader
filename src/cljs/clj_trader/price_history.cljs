@@ -1,5 +1,6 @@
 (ns clj-trader.price-history
   (:require [ajax.core :as ajax]
+            [clj-trader.date-selector :refer [date-selector]]
             [clj-trader.mui-extension :as mui-x]
             [clj-trader.utils :as utils :refer [api-url]]
             [cljs-material-ui.core :as mui]
@@ -8,14 +9,14 @@
 
 (def CanvasJSChart (.. CanvasJSReact -default -CanvasJSChart))
 
-(def component-state (atom {:use-periods    false
+(def component-state (atom {:use-start-date false
                             :use-end-date   false
                             :period-type    :day
                             :periods        1
                             :frequency-type :minute
                             :frequency      1
                             :start-date     (utils/yesterday)
-                            :end-date       nil
+                            :end-date       (js/Date.)
                             :chart-data     []}))
 
 (def period-types
@@ -96,9 +97,9 @@
 
 (rum/defc frequency-period-control < rum/reactive []
   (mui-x/stack
-    {:direction "row"
+    {:direction   "row"
      :align-items "center"
-     :spacing 1
+     :spacing     1
      :padding-top 1}
     (mui/form-control
       {:sx {:m 1 :minWidth 180}}
@@ -133,12 +134,46 @@
          :on-change #(swap! component-state assoc :frequency (.. % -target -value))}
         (map #(mui/menu-item {:key % :value %} %) ((:frequency-type (rum/react component-state)) valid-frequencies))))))
 
-(rum/defc price-history < rum/reactive [{:keys [symbols]}]
+(rum/defc start-end-control < rum/reactive []
+  (mui-x/stack
+    {:direction "column" :spacing 0.5}
+    (mui-x/stack
+      {:direction "row" :spacing 0.5}
+      (mui/form-control-label
+      {:label   "Use Start Date"
+       :control (mui/switch {:on-change #(swap! component-state
+                                                assoc
+                                                :use-start-date
+                                                (.. % -target -checked))
+                             :checked   (:use-start-date (rum/react component-state))})})
+    (when (:use-start-date (rum/react component-state))
+      (date-selector (:start-date (rum/react component-state))
+                     #(swap! component-state assoc :start-date %))))
+    (mui-x/stack
+      {:direction "row" :soacing 0.5}
+      (mui/form-control-label
+      {:label   "Use End Date"
+       :control (mui/switch {:on-change #(swap! component-state
+                                                assoc
+                                                :use-end-date
+                                                (.. % -target -checked))
+                             :checked   (:use-end-date (rum/react component-state))})})
+    (when (:use-end-date (rum/react component-state))
+      (date-selector (:end-date (rum/react component-state))
+                     #(swap! component-state assoc :end-date %))))))
+
+(rum/defc chart-settings []
+  (mui-x/stack
+    {:direction "column" :spacing 0.5}
+    (start-end-control)
+    (frequency-period-control)))
+
+(rum/defc price-history < rum/reactive []
   [:div
    (price-chart (:chart-data (rum/react component-state)))
    (mui-x/stack
      {:direction "row" :spacing 1}
-     (frequency-period-control)
+     (chart-settings)
      (mui/button
        {:variant  "contained"
         :on-click refresh-data}
