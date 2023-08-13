@@ -37,7 +37,8 @@
 
 (defn render-symbol-item [symbol]
   (mui/list-item
-    {:key symbol}
+    {:key     symbol
+     :divider true}
     (mui/list-item-text {:primary symbol})
     (mui/button {:variant  "outlined"
                  :color    "error"
@@ -55,7 +56,7 @@
     {:direction       "column"
      :spacing         1
      :justify-content "flex-start"
-     :align-items     "baseline"}
+     :align-items     "stretch"}
     (mui/form-control-label {:label   "Enable Automated Trading"
                              :control (mui/switch {:on-change #(swap! component-state
                                                                       assoc-in

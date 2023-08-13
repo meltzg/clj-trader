@@ -22,13 +22,19 @@
                                   %))))))
 
 (defn- get-auth-status-handler [config {:keys [td-brokerage]} & _]
-  (response (-> (td/execute-command {:command      :auth-status
-                                     :config       config
-                                     :td-brokerage td-brokerage})
-                (select-keys [:expires-at :refresh-expires-at :signed-in?])
-                (update-vals #(if (instance? org.joda.time.DateTime %)
-                                (tc/to-string %)
-                                %)))))
+  (let [current-status (td/execute-command {:command      :auth-status
+                                            :config       config
+                                            :td-brokerage td-brokerage})
+        final-status (if (:signed-in? current-status)
+                       current-status
+                       (td/execute-command {:command      :refresh-access-token
+                                            :config       config
+                                            :td-brokerage td-brokerage}))]
+    (response (-> final-status
+                  (select-keys [:expires-at :refresh-expires-at :signed-in?])
+                  (update-vals #(if (instance? org.joda.time.DateTime %)
+                                  (tc/to-string %)
+                                  %))))))
 
 (defn- sign-out-handler [config {:keys [td-brokerage]} & _]
   (response (-> (td/execute-command {:command      :sign-out

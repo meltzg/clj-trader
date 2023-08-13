@@ -121,12 +121,15 @@
 
 (defmethod execute-command :refresh-access-token [{:keys [td-brokerage config] :as command}]
   (let [{:keys [refresh-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
-    (->> (assoc command :refresh-token refresh-token)
-         command->request
-         make-request
-         :body
-         format-sign-in-response
-         (save-access-info! td-brokerage (-> config :config :keystore-pass)))
+    (try
+      (->> (assoc command :refresh-token refresh-token)
+           command->request
+           make-request
+           :body
+           format-sign-in-response
+           (save-access-info! td-brokerage (-> config :config :keystore-pass)))
+      (catch Exception e
+        (println "Refresh access token failed" e)))
     (load-access-info td-brokerage (-> config :config :keystore-pass))))
 
 (defmethod execute-command :auth-status [{:keys [td-brokerage config]}]

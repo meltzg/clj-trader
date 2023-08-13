@@ -92,12 +92,14 @@
                                                   :title  "Price (USD)"}
                                :legend           {:cursor    "pointer"
                                                   :itemclick handle-legend-click}
-                               :data             (clj->js chart-data)
-                               }}])
+                               :data             (clj->js chart-data)}}])
 
 (rum/defc frequency-period-control < rum/reactive []
   (mui-x/stack
-    {:direction "row" :spacing 1 :padding-top 1}
+    {:direction "row"
+     :align-items "center"
+     :spacing 1
+     :padding-top 1}
     (mui/form-control
       {:sx {:m 1 :minWidth 180}}
       (mui/input-label "Period Type")

@@ -29,16 +29,16 @@
   (refresh-auth-status signed-in? change-signed-in)
   [:div.authenticator
    (auth-status signed-in?)
-   (if signed-in?
-     (mui-x/stack {:direction "row" :spacing 0.5}
-                  (mui/button {:variant  "contained"
-                               :on-click #(refresh-auth-status signed-in? change-signed-in)}
-                              "Refresh Status")
+   (mui-x/stack {:direction "row" :spacing 0.5}
+                (mui/button {:variant  "contained"
+                             :on-click #(refresh-auth-status signed-in? change-signed-in)}
+                            "Refresh Status")
+                (if signed-in?
                   (mui/button {:variant  "contained"
                                :on-click (fn []
                                            (ajax/GET (str api-url "signOut")
                                                      {:handler #(refresh-auth-status signed-in? change-signed-in)}))}
-                              "Sign Out"))
-     (mui/button {:variant  "contained"
-                  :on-click initiate-auth}
-                 "Sign In"))])
+                              "Sign Out")
+                  (mui/button {:variant  "contained"
+                               :on-click initiate-auth}
+                              "Sign In")))])
