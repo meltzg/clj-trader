@@ -43,8 +43,8 @@
    :ytd   [:day :weekly]})
 
 (def valid-frequencies
-  {:minute  [1]
-   :day     [1 5 10 15 30]
+  {:minute  [1 5 10 15 30]
+   :day     [1]
    :weekly  [1]
    :monthly [1]})
 
@@ -76,6 +76,13 @@
                                        :chart-data
                                        (mapv price-history->chart-data price-histories)))}))
 
+(defn- handle-legend-click [e]
+  (if (or (nil? (.. e -dataSeries -visible))
+          (true? (.. e -dataSeries -visible)))
+    (set! (.. e -dataSeries -visible) false)
+    (set! (.. e -dataSeries -visible) true))
+  (.render (.-chart e)))
+
 (rum/defc price-chart < [chart-data]
   [:> CanvasJSChart {:options {:title            {:text "Price History"}
                                :zoomEnabled      true
@@ -83,6 +90,8 @@
                                :exportEnabled    true
                                :axis             {:prefix "$"
                                                   :title  "Price (USD)"}
+                               :legend           {:cursor    "pointer"
+                                                  :itemclick handle-legend-click}
                                :data             (clj->js chart-data)
                                }}])
 
