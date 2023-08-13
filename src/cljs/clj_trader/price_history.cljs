@@ -54,12 +54,12 @@
    :name               symbol
    :yValueFormatString "$###0.00"
    :dataPoints         (mapv (fn [candle]
-                              {:x (:datetime candle)
-                               :y [(:open candle)
-                                   (:high candle)
-                                   (:low candle)
-                                   (:close candle)]})
-                            price-candles)})
+                               {:x (js/Date. (:datetime candle))
+                                :y [(:open candle)
+                                    (:high candle)
+                                    (:low candle)
+                                    (:close candle)]})
+                             price-candles)})
 
 (defn refresh-data []
   (ajax/GET (str api-url "priceHistory")
@@ -74,9 +74,17 @@
                                 (swap! component-state
                                        assoc
                                        :chart-data
-                                       (mapv price-history->chart-data price-histories))
-                                (set! (.. (:chart-ref @component-state) -options -title -text) "FUCK")
-                                (.render (:chart-ref @component-state)))}))
+                                       (mapv price-history->chart-data price-histories)))}))
+
+(rum/defc price-chart < [chart-data]
+  [:> CanvasJSChart {:options {:title            {:text "Price History"}
+                               :zoomEnabled      true
+                               :animationEnabled true
+                               :exportEnabled    true
+                               :axis             {:prefix "$"
+                                                  :title  "Price (USD)"}
+                               :data             (clj->js chart-data)
+                               }}])
 
 (rum/defc frequency-period-control < rum/reactive []
   (mui-x/stack
@@ -95,7 +103,7 @@
       (mui/select
         {:value     (:periods (rum/react component-state))
          :label     "# Periods"
-         :on-change #(swap! component-state assoc :period-type (.. % -target -value))}
+         :on-change #(swap! component-state assoc :periods (.. % -target -value))}
         (map #(mui/menu-item {:key % :value %} %) ((:period-type (rum/react component-state)) valid-periods))))
     (mui/form-control
       {:sx {:m 1 :minWidth 180}}
@@ -116,17 +124,7 @@
 
 (rum/defc price-history < rum/reactive [{:keys [symbols]}]
   [:div
-   [:> CanvasJSChart {:options {:title            {:text "Price History"}
-                                :zoomEnabled      true
-                                :animationEnabled true
-                                :exportEnabled    true
-                                :axis             {:prefix "$"
-                                                   :title  "Price (USD)"}
-                                :data             (:chart-data (rum/react component-state))
-                                ;:data [{:type "candlestick", :showInLegend true, :name "AMZN", :yValueFormatString "$###0.00", :dataPoints [{:x 1689570000000, :y [134.56 135.99 128.415 130]} {:x 1690174800000, :y [130.305 133.01 126.11 132.21]} {:x 1690779600000, :y [133.2 143.63 126.41 139.57]} {:x 1691384400000, :y [140.99 142.54 137 138.41]}]} {:type "candlestick", :showInLegend true, :name "IBM", :yValueFormatString "$###0.00", :dataPoints [{:x 1689570000000, :y [133.26 140.32 133.1 138.94]} {:x 1690174800000, :y [139.35 143.95 138.7788 143.45]} {:x 1690779600000, :y [143.81 146.09 142.17 144.24]} {:x 1691384400000, :y [145 146.5 142.205 143.12]}]}]
-
-                                }
-                      :onRef #(swap! component-state assoc :chart-ref %)}]
+   (price-chart (:chart-data (rum/react component-state)))
    (mui-x/stack
      {:direction "row" :spacing 1}
      (frequency-period-control)
