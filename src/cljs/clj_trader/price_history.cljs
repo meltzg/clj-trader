@@ -113,17 +113,18 @@
     (mui/table
       (mui/table-head
         (mui/table-row
+          {:sx {:backgroundColor "lightgray"}}
           (concat [(mui-x/table-cell "Symbol")]
                   (map #(mui-x/table-cell
                           {:align "right" :key %}
                           (name %))
-                       (->> stats-data first keys (remove #{:symbol}))))))
+                       (->> stats-data first keys (remove #{:symbol}) sort)))))
       (mui/table-body
         (map #(mui/table-row
                 {:key (:symbol %)}
                 (concat [(mui-x/table-cell (:symbol %))]
                         (map (fn [key] (mui-x/table-cell {:align "right"} (gstring/format "%.2f" (key %))))
-                             (->> stats-data first keys (remove #{:symbol})))))
+                             (->> stats-data first keys (remove #{:symbol}) sort))))
              stats-data)))))
 
 (rum/defc frequency-period-control < rum/reactive []

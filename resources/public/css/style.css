@@ -1,5 +1,21 @@
 /* some style */
 
+html,
+body {
+  height: 100%;
+}
+
+html {
+  display: table;
+  margin: auto;
+}
+
+body {
+  font: 14px "Century Gothic", Futura, sans-serif;
+  display: table-cell;
+  vertical-align: top;
+}
+
 .authenticator {
     display: inline-block
 }
@@ -21,19 +37,6 @@
 
 .signed-out {
     background-color: red;
-}
-
-form {
-    display: inline-flex;
-    flex-direction: column;
-    margin-top: 2vh;
-    border-style: solid;
-    border-width: 2px;
-    border-color: grey;
-}
-
-hr {
-    width: 100%
 }
 
 .sidebar {
