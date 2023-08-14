@@ -28,14 +28,18 @@
   {:symbol        symbol
    :price-candles (map #(select-keys % [:open :high :low :close :datetime]) candles)})
 
-(defn- calc-avg [price-candles key]
-  (/ (apply + (map key price-candles)) (count price-candles)))
+(defn- calc-stat [price-candles keys stat-prefix f]
+  (into {} (map (fn [key]
+                  [(str stat-prefix (name key))
+                   (f price-candles key)])
+                keys)))
 
 (defn- calc-stats [{:keys [price-candles] :as price-history}]
-  (assoc price-history :stats (into {} (map (fn [key]
-                                              [(keyword (str "avg-" (name key)))
-                                               (calc-avg price-candles key)])
-                                            [:open :high :low :close]))))
+  (assoc price-history :stats (merge (calc-stat price-candles
+                                                [:open :high :low :close]
+                                                "avg-"
+                                                (fn [price-candles key]
+                                                  (/ (apply + (map key price-candles)) (count price-candles)))))))
 
 (defn save-access-info! [{:keys [keystore]} keystore-pass access-info]
   (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
