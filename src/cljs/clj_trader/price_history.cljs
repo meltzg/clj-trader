@@ -5,6 +5,8 @@
             [clj-trader.utils :as utils :refer [api-url]]
             [cljs-material-ui.core :as mui]
             ["@canvasjs/react-charts" :as CanvasJSReact]
+            [goog.string :as gstring]
+            [goog.string.format]
             [rum.core :as rum]))
 
 (def CanvasJSChart (.. CanvasJSReact -default -CanvasJSChart))
@@ -17,7 +19,8 @@
                             :frequency      1
                             :start-date     (utils/yesterday)
                             :end-date       (js/Date.)
-                            :chart-data     []}))
+                            :chart-data     []
+                            :table-data     []}))
 
 (def period-types
   [:day
@@ -62,6 +65,10 @@
                                     (:close candle)]})
                              price-candles)})
 
+(defn price-history->table-data [{:keys [symbol stats]}]
+  (prn "STATS" stats)
+  (assoc stats :symbol symbol))
+
 (defn refresh-data []
   (ajax/GET (str api-url "priceHistory")
             {:format          :edn
@@ -79,7 +86,9 @@
                                 (swap! component-state
                                        assoc
                                        :chart-data
-                                       (mapv price-history->chart-data price-histories)))}))
+                                       (mapv price-history->chart-data price-histories)
+                                       :table-data
+                                       (mapv price-history->table-data price-histories)))}))
 
 (defn- handle-legend-click [e]
   (if (or (nil? (.. e -dataSeries -visible))
@@ -88,7 +97,7 @@
     (set! (.. e -dataSeries -visible) true))
   (.render (.-chart e)))
 
-(rum/defc price-chart < [chart-data]
+(rum/defc price-chart [chart-data]
   [:> CanvasJSChart {:options {:title            {:text "Price History"}
                                :zoomEnabled      true
                                :animationEnabled true
@@ -98,6 +107,24 @@
                                :legend           {:cursor    "pointer"
                                                   :itemclick handle-legend-click}
                                :data             (clj->js chart-data)}}])
+
+(rum/defc stats-table [stats-data]
+  (mui-x/table-container
+    (mui/table
+      (mui/table-head
+        (mui/table-row
+          (concat [(mui-x/table-cell "Symbol")]
+                  (map #(mui-x/table-cell
+                          {:align "right" :key %}
+                          (name %))
+                       (->> stats-data first keys (remove #{:symbol}))))))
+      (mui/table-body
+        (map #(mui/table-row
+                {:key (:symbol %)}
+                (concat [(mui-x/table-cell (:symbol %))]
+                        (map (fn [key] (mui-x/table-cell {:align "right"} (gstring/format "%.2f" (key %))))
+                             (->> stats-data first keys (remove #{:symbol})))))
+             stats-data)))))
 
 (rum/defc frequency-period-control < rum/reactive []
   (mui-x/stack
@@ -173,12 +200,16 @@
     (frequency-period-control)))
 
 (rum/defc price-history < rum/reactive []
-  [:div
-   (price-chart (:chart-data (rum/react component-state)))
-   (mui-x/stack
-     {:direction "row" :spacing 1}
-     (chart-settings)
-     (mui/button
-       {:variant  "contained"
-        :on-click refresh-data}
-       "Refresh"))])
+  [:div.horizontal
+   [:div
+    (mui-x/stack
+      {:direction "row" :spacing 1}
+      (price-chart (:chart-data (rum/react component-state))))
+    (mui-x/stack
+      {:direction "row" :spacing 1}
+      (chart-settings)
+      (mui/button
+        {:variant  "contained"
+         :on-click refresh-data}
+        "Refresh"))]
+   (stats-table (:table-data (rum/react component-state)))])

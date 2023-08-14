@@ -28,6 +28,15 @@
   {:symbol        symbol
    :price-candles (map #(select-keys % [:open :high :low :close :datetime]) candles)})
 
+(defn- calc-avg [price-candles key]
+  (/ (apply + (map key price-candles)) (count price-candles)))
+
+(defn- calc-stats [{:keys [price-candles] :as price-history}]
+  (assoc price-history :stats (into {} (map (fn [key]
+                                              [(keyword (str "avg-" (name key)))
+                                               (calc-avg price-candles key)])
+                                            [:open :high :low :close]))))
+
 (defn save-access-info! [{:keys [keystore]} keystore-pass access-info]
   (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
                                        :refresh-expires-at (tc/to-string (:refresh-expires-at access-info)))
@@ -152,7 +161,8 @@
               command->request
               (make-authenticated-request td-brokerage config)
               :body
-              format-price-history))
+              format-price-history
+              calc-stats))
        (-> config :user-settings deref :symbols)))
 
 (defn load-or-create-keystore [keystore-pass]
