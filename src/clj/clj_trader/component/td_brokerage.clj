@@ -66,7 +66,7 @@
   (let [request (merge options {:method                method
                                 :url                   (str api-root path)
                                 :throw-entire-message? true})]
-    (println "make request" request)
+    (println "make request" (update-in request [:headers :authorization] some?))
     (http/request request)))
 
 (defn- make-authenticated-request
