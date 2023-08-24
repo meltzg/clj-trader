@@ -137,35 +137,47 @@
                                   (->> stats-data first keys (remove #{:symbol}) sort)))])
           stats-data)]]])
 
+(rum/defc form-selector [{:keys [value label on-change items item-renderer]}]
+  [:> FormControl {:sx {:m 1 :minWidth 180}}
+   [:> InputLabel label]
+   [:> Select {:value    value
+               :label    label
+               :onChange on-change}
+    (map item-renderer items)]])
+
 (rum/defc frequency-period-control < rum/reactive []
   [:> Stack {:direction  "row"
              :alignItems "center"
              :spacing    1
              :paddingTop 1}
-   [:> FormControl {:sx {:m 1 :minWidth 180}}
-    [:> InputLabel "Period Type"]
-    [:> Select {:value    (name (:period-type (rum/react component-state)))
-                :label    "Period Type"
-                :onChange #(swap! component-state assoc :period-type (keyword (.. % -target -value)))}
-     (map (fn [period-type] [:> MenuItem {:key period-type :value (name period-type)} (name period-type)]) period-types)]]
-   [:> FormControl {:sx {:m 1 :minWidth 90}}
-    [:> InputLabel "# Periods"]
-    [:> Select {:value    (:periods (rum/react component-state))
-                :label    "# Periods"
-                :onChange #(swap! component-state assoc :periods (.. % -target -value))}
-     (map (fn [periods] [:> MenuItem {:key periods :value periods} periods]) ((:period-type (rum/react component-state)) valid-periods))]]
-   [:> FormControl {:sx {:m 1 :minWidth 180}}
-    [:> InputLabel "Frequency Type"]
-    [:> Select {:value    (name (:frequency-type (rum/react component-state)))
-                :label    "Frequency Type"
-                :onChange #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))}
-     (map (fn [frequency-type] [:> MenuItem {:key frequency-type :value (name frequency-type)} (name frequency-type)]) ((:period-type (rum/react component-state)) valid-frequency-type-for-period))]]
-   [:> FormControl {:sx {:m 1 :minWidth 90}}
-    [:> InputLabel "Frequency"]
-    [:> Select {:value    (:frequency (rum/react component-state))
-                :label    "Frequency"
-                :onChange #(swap! component-state assoc :frequency (.. % -target -value))}
-     (map (fn [frequency] [:> MenuItem {:key frequency :value frequency} frequency]) ((:frequency-type (rum/react component-state)) valid-frequencies))]]])
+   (form-selector {:value         (name (:period-type (rum/react component-state)))
+                   :label         "Period Type"
+                   :on-change     #(swap! component-state assoc :period-type (keyword (.. % -target -value)))
+                   :items         period-types
+                   :item-renderer (fn [period-type]
+                                    [:> MenuItem {:key period-type :value (name period-type)}
+                                     (name period-type)])})
+   (form-selector {:value         (:periods (rum/react component-state))
+                   :label         "# Periods"
+                   :on-change     #(swap! component-state assoc :periods (.. % -target -value))
+                   :items         ((:period-type (rum/react component-state)) valid-periods)
+                   :item-renderer (fn [periods]
+                                    [:> MenuItem {:key periods :value periods}
+                                     periods])})
+   (form-selector {:value         (name (:frequency-type (rum/react component-state)))
+                   :label         "Frequency Type"
+                   :on-change     #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))
+                   :items         ((:period-type (rum/react component-state)) valid-frequency-type-for-period)
+                   :item-renderer (fn [frequency-type]
+                                    [:> MenuItem {:key frequency-type :value (name frequency-type)}
+                                     (name frequency-type)])})
+   (form-selector {:value         (:frequency (rum/react component-state))
+                   :label         "Frequency"
+                   :on-change     #(swap! component-state assoc :frequency (.. % -target -value))
+                   :items         ((:frequency-type (rum/react component-state)) valid-frequencies)
+                   :item-renderer (fn [frequency]
+                                    [:> MenuItem {:key frequency :value frequency}
+                                     frequency])})])
 
 (rum/defc start-end-control < rum/reactive []
   [:> Stack {:direction "column" :spacing 0.5}
