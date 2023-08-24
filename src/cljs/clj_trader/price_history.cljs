@@ -122,15 +122,15 @@
                                :data             (clj->js chart-data)}}])
 
 (rum/defc stats-table [stats-data]
-  [:> TableContainer {}
-   [:> Table {}
-    [:> TableHead {}
+  [:> TableContainer
+   [:> Table
+    [:> TableHead
      [:> TableRow {:sx {:backgroundColor "lightgray"}}
-      (concat [[:> TableCell {} "Symbol"]]
+      (concat [[:> TableCell "Symbol"]]
               (map (fn [column] [:> TableCell {:align "right" :key column}
                                  (name column)])
                    (->> stats-data first keys (remove #{:symbol}) sort)))]]
-    [:> TableBody {}
+    [:> TableBody
      (map (fn [row] [:> TableRow {:key (:symbol row)}
                      (concat [[:> TableCell (:symbol row)]]
                              (map (fn [key] [:> TableCell {:align "right"} (gstring/format "%.2f" (key row))])
@@ -143,23 +143,23 @@
              :spacing    1
              :paddingTop 1}
    [:> FormControl {:sx {:m 1 :minWidth 180}}
-    [:> InputLabel {} "Period Type"]
-    [:> Select {:value    (:period-type (rum/react component-state))
+    [:> InputLabel "Period Type"]
+    [:> Select {:value    (name (:period-type (rum/react component-state)))
                 :label    "Period Type"
                 :onChange #(swap! component-state assoc :period-type (keyword (.. % -target -value)))}
-     (map (fn [period-type] [:> MenuItem {:key period-type :value period-type} (name period-type)]) period-types)]]
+     (map (fn [period-type] [:> MenuItem {:key period-type :value (name period-type)} (name period-type)]) period-types)]]
    [:> FormControl {:sx {:m 1 :minWidth 90}}
-    [:> InputLabel {} "# Periods"]
+    [:> InputLabel "# Periods"]
     [:> Select {:value    (:periods (rum/react component-state))
                 :label    "# Periods"
                 :onChange #(swap! component-state assoc :periods (.. % -target -value))}
      (map (fn [periods] [:> MenuItem {:key periods :value periods} periods]) ((:period-type (rum/react component-state)) valid-periods))]]
    [:> FormControl {:sx {:m 1 :minWidth 180}}
-    [:> InputLabel {} "Frequency Type"]
-    [:> Select {:value    (:frequency-type (rum/react component-state))
+    [:> InputLabel "Frequency Type"]
+    [:> Select {:value    (name (:frequency-type (rum/react component-state)))
                 :label    "Frequency Type"
                 :onChange #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))}
-     (map (fn [frequency-type] [:> MenuItem {:key frequency-type :value frequency-type} (name frequency-type)]) ((:period-type (rum/react component-state)) valid-frequency-type-for-period))]]
+     (map (fn [frequency-type] [:> MenuItem {:key frequency-type :value (name frequency-type)} (name frequency-type)]) ((:period-type (rum/react component-state)) valid-frequency-type-for-period))]]
    [:> FormControl {:sx {:m 1 :minWidth 90}}
     [:> InputLabel "Frequency"]
     [:> Select {:value    (:frequency (rum/react component-state))
