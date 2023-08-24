@@ -2,6 +2,7 @@
   (:require [ajax.core :as ajax]
             [clj-trader.utils :refer [api-url]]
             [clojure.string :refer [upper-case]]
+            ["@mui/icons-material/Delete$default" :as DeleteIcon]
             ["@mui/material" :refer [Button
                                      FormControlLabel
                                      IconButton
@@ -47,14 +48,14 @@
   [:> ListItem {:key     symbol
                 :divider true}
    [:> ListItemText {:primary symbol}]
-   [:> Button {:variant "outlined"
-               :color   "error"
-               :onClick #(swap! component-state
-                                update-in
-                                [:settings :symbols]
-                                (fn [symbols]
-                                  (remove #{symbol} symbols)))}
-    "X"]])
+   [:> ListItemIcon
+    [:> IconButton {:color "error"
+                    :onClick #(swap! component-state
+                                     update-in
+                                     [:settings :symbols]
+                                     (fn [symbols]
+                                       (remove #{symbol} symbols)))}
+     [:> DeleteIcon]]]])
 
 (rum/defc settings-panel < rum/reactive (refresh-settings-mixin) [initial-settings change-settings]
   (when (empty? initial-settings)
