@@ -17,10 +17,9 @@
                  [cheshire "5.11.0"]
 
                  ;; CLJS Dependencies
-                 [org.clojure/clojurescript "1.11.60"]
+                 ;[org.clojure/clojurescript "1.11.60"]
+                 [thheller/shadow-cljs "2.25.3"]
                  [rum "0.12.11"]
-                 [cljsjs/material-ui "5.11.1-0"]
-                 [cljs-material-ui "1.0.01"]
                  [cljs-ajax "0.8.4"]]
   :plugins [[lein-ancient "0.7.0"]]
   :main ^:skip-aot clj-trader.core
@@ -29,13 +28,10 @@
                  "src/cljs"
                  "test/cljs"]
 
-  :aliases {"fig:build" ["trampoline" "run" "-m" "figwheel.main" "-b" "dev" "-r"]
-            "fig:min"   ["run" "-m" "figwheel.main" "-bo" "dev"]}
+  :aliases {}
 
   :profiles {:uberjar {:aot :all}
-             :dev     {:dependencies   [[com.bhauman/figwheel-main "0.2.18"]
-                                        [org.slf4j/slf4j-nop "2.0.7"]
-                                        [com.bhauman/rebel-readline-cljs "0.1.4"]]
+             :dev     {:dependencies   [[org.slf4j/slf4j-nop "2.0.7"]]
 
                        :resource-paths ["target"]
                        ;; need to add the compiled assets to the :clean-targets

@@ -1,9 +1,17 @@
 (ns clj-trader.user-settings
   (:require [ajax.core :as ajax]
-            [clj-trader.mui-extension :as mui-x]
             [clj-trader.utils :refer [api-url]]
-            [cljs-material-ui.core :as mui]
             [clojure.string :refer [upper-case]]
+            ["@mui/material" :refer [Button
+                                     FormControlLabel
+                                     IconButton
+                                     List
+                                     ListItem
+                                     ListItemIcon
+                                     ListItemText
+                                     Stack
+                                     Switch
+                                     TextField]]
             [rum.core :as rum]))
 
 (def component-state (atom {:settings {}
@@ -19,12 +27,12 @@
                 :keywords?       true})
      state)})
 
-(defn handle-save [on-change]
+(defn handle-save [onChange]
   (ajax/PUT (str api-url "userSettings")
             {:params          (:settings @component-state)
              :handler         (fn [data]
                                 (swap! component-state assoc :settings data)
-                                (on-change data))
+                                (onChange data))
              :format          :json
              :response-format :json
              :keywords?       true}))
@@ -36,84 +44,81 @@
       (swap! component-state assoc :symbol nil))))
 
 (defn render-symbol-item [symbol]
-  (mui/list-item
-    {:key     symbol
-     :divider true}
-    (mui/list-item-text {:primary symbol})
-    (mui/button {:variant  "outlined"
-                 :color    "error"
-                 :on-click #(swap! component-state
-                                   update-in
-                                   [:settings :symbols]
-                                   (fn [symbols]
-                                     (remove #{symbol} symbols)))}
-                "X")))
+  [:> ListItem {:key     symbol
+                :divider true}
+   [:> ListItemText {:primary symbol}]
+   [:> Button {:variant "outlined"
+               :color   "error"
+               :onClick #(swap! component-state
+                                update-in
+                                [:settings :symbols]
+                                (fn [symbols]
+                                  (remove #{symbol} symbols)))}
+    "X"]])
 
 (rum/defc settings-panel < rum/reactive (refresh-settings-mixin) [initial-settings change-settings]
   (when (empty? initial-settings)
     (change-settings (:settings @component-state)))
-  (mui-x/stack
-    {:direction       "column"
-     :spacing         1
-     :justify-content "flex-start"
-     :align-items     "stretch"}
-    (mui/form-control-label {:label   "Enable Automated Trading"
-                             :control (mui/switch {:on-change #(swap! component-state
-                                                                      assoc-in
-                                                                      [:settings :enable-automated-trading]
-                                                                      (.. % -target -checked))
-                                                   :checked   (-> (rum/react component-state)
-                                                                  :settings
-                                                                  :enable-automated-trading)})})
-    (mui/form-control-label {:label   "Enable End of Day Exit"
-                             :control (mui/switch {:on-change #(swap! component-state
-                                                                      assoc-in
-                                                                      [:settings :end-of-day-exit]
-                                                                      (.. % -target -checked))
-                                                   :checked   (-> (rum/react component-state)
-                                                                  :settings
-                                                                  :end-of-day-exit)})})
-    (mui/textfield {:label       "Trading Frequency Seconds"
-                    :type        "number"
-                    :Input-Props {:inputProps {:min 1}}
-                    :on-change   #(swap! component-state
-                                         assoc-in
-                                         [:settings :trading-freq-seconds]
-                                         (.. % -target -valueAsNumber))
-                    :value       (or (-> (rum/react component-state)
-                                         :settings
-                                         :trading-freq-seconds) "")})
-    (mui/textfield {:label       "Position Size ($)"
-                    :type        "number"
-                    :Input-Props {:inputProps {:min 0}}
-                    :on-change   #(swap! component-state
-                                         assoc-in
-                                         [:settings :position-size]
-                                         (.. % -target -valueAsNumber))
-                    :value       (or (-> (rum/react component-state)
-                                         :settings
-                                         :position-size) "")})
-    (mui/textfield {:label       "Add New Symbol"
-                    :on-key-down handle-type-symbol
-                    :on-change   #(swap! component-state
-                                         assoc
-                                         :symbol
-                                         (.. % -target -value))
-                    :value       (or (:symbol (rum/react component-state)) "")})
-    (mui/list
-      (map render-symbol-item (-> (rum/react component-state)
-                                  :settings
-                                  :symbols)))
-    (mui-x/stack
-      {:direction "row"
-       :spacing   1}
-      (mui/button {:variant  "contained"
-                   :on-click (fn [] (handle-save change-settings))
-                   :disabled (= (:settings (rum/react component-state))
-                                initial-settings)}
-                  "Save")
-      (mui/button {:variant  "contained"
-                   :on-click #(swap! component-state assoc :settings initial-settings)
-                   :disabled (= (:settings (rum/react component-state))
-                                initial-settings)}
-                  "Reset"))))
+  [:> Stack {:direction       "column"
+             :spacing         1
+             :justify-content "flex-start"
+             :align-items     "stretch"}
+   [:> FormControlLabel {:label   "Enable Automated Trading"
+                         :control (rum/adapt-class Switch {:onChange #(swap! component-state
+                                                                             assoc-in
+                                                                             [:settings :enable-automated-trading]
+                                                                             (.. % -target -checked))
+                                                           :checked  (-> (rum/react component-state)
+                                                                         :settings
+                                                                         :enable-automated-trading)})}]
+   [:> FormControlLabel {:label   "Enable End of Day Exit"
+                         :control (rum/adapt-class Switch {:onChange #(swap! component-state
+                                                                             assoc-in
+                                                                             [:settings :end-of-day-exit]
+                                                                             (.. % -target -checked))
+                                                           :checked  (-> (rum/react component-state)
+                                                                         :settings
+                                                                         :end-of-day-exit)})}]
+   [:> TextField {:label      "Trading Frequency Seconds"
+                  :type       "number"
+                  :InputProps {:inputProps {:min 1}}
+                  :onChange   #(swap! component-state
+                                      assoc-in
+                                      [:settings :trading-freq-seconds]
+                                      (.. % -target -valueAsNumber))
+                  :value      (or (-> (rum/react component-state)
+                                      :settings
+                                      :trading-freq-seconds) "")}]
+   [:> TextField {:label      "Position Size ($)"
+                  :type       "number"
+                  :InputProps {:inputProps {:min 0}}
+                  :onChange   #(swap! component-state
+                                      assoc-in
+                                      [:settings :position-size]
+                                      (.. % -target -valueAsNumber))
+                  :value      (or (-> (rum/react component-state)
+                                      :settings
+                                      :position-size) "")}]
+   [:> TextField {:label     "Add New Symbol"
+                  :onKeyDown handle-type-symbol
+                  :onChange  #(swap! component-state
+                                     assoc
+                                     :symbol
+                                     (.. % -target -value))
+                  :value     (or (:symbol (rum/react component-state)) "")}]
+   [:> List
+    (map render-symbol-item (-> (rum/react component-state)
+                                :settings
+                                :symbols))]
+   [:> Stack {:direction "row"
+              :spacing   1}
+    [:> Button {:variant  "contained"
+                :onClick  (fn [] (handle-save change-settings))
+                :disabled (= (:settings (rum/react component-state))
+                             initial-settings)}
+     "Save"]
+    [:> Button {:variant  "contained"
+                :onClick  #(swap! component-state assoc :settings initial-settings)
+                :disabled (= (:settings (rum/react component-state))
+                             initial-settings)}
+     "Reset"]]])

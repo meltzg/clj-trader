@@ -17,3 +17,4 @@ resources/public/cljs-out/
 *.jks
 /.rebel_readline_history
 node_modules/
+.shadow-cljs/

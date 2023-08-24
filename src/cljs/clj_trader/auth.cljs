@@ -1,8 +1,7 @@
 (ns clj-trader.auth
   (:require [ajax.core :as ajax]
-            [clj-trader.mui-extension :as mui-x]
             [clj-trader.utils :refer [api-url]]
-            [cljs-material-ui.core :as mui]
+            ["@mui/material" :refer [Button Stack]]
             [rum.core :as rum]))
 
 (defn initiate-auth []
@@ -29,16 +28,16 @@
   (refresh-auth-status signed-in? change-signed-in)
   [:div.authenticator
    (auth-status signed-in?)
-   (mui-x/stack {:direction "row" :spacing 0.5}
-                (mui/button {:variant  "contained"
-                             :on-click #(refresh-auth-status signed-in? change-signed-in)}
-                            "Refresh Status")
-                (if signed-in?
-                  (mui/button {:variant  "contained"
-                               :on-click (fn []
-                                           (ajax/GET (str api-url "signOut")
-                                                     {:handler #(refresh-auth-status signed-in? change-signed-in)}))}
-                              "Sign Out")
-                  (mui/button {:variant  "contained"
-                               :on-click initiate-auth}
-                              "Sign In")))])
+   [:> Stack {:direction "row" :spacing 0.5}
+    [:> Button {:variant "contained"
+                :onClick #(refresh-auth-status signed-in? change-signed-in)}
+     "Refresh Status"]
+    (if signed-in?
+      [:> Button {:variant "contained"
+                  :onClick (fn []
+                             (ajax/GET (str api-url "signOut")
+                                       {:handler #(refresh-auth-status signed-in? change-signed-in)}))}
+       "Sign Out"]
+      [:> Button {:variant "contained"
+                  :onClick initiate-auth}
+       "Sign In"])]])

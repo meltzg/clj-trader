@@ -1,10 +1,23 @@
 (ns clj-trader.price-history
   (:require [ajax.core :as ajax]
             [clj-trader.date-selector :refer [date-selector]]
-            [clj-trader.mui-extension :as mui-x]
             [clj-trader.utils :as utils :refer [api-url]]
-            [cljs-material-ui.core :as mui]
             ["@canvasjs/react-charts" :as CanvasJSReact]
+            ["@mui/material" :refer [Button
+                                     FormControl
+                                     FormControlLabel
+                                     InputLabel
+                                     MenuItem
+                                     Select
+                                     Stack
+                                     Switch
+                                     TextField
+                                     TableContainer
+                                     Table
+                                     TableRow
+                                     TableHead
+                                     TableCell
+                                     TableBody]]
             [goog.string :as gstring]
             [goog.string.format]
             [rum.core :as rum]))
@@ -109,108 +122,87 @@
                                :data             (clj->js chart-data)}}])
 
 (rum/defc stats-table [stats-data]
-  (mui-x/table-container
-    (mui/table
-      (mui/table-head
-        (mui/table-row
-          {:sx {:backgroundColor "lightgray"}}
-          (concat [(mui-x/table-cell "Symbol")]
-                  (map #(mui-x/table-cell
-                          {:align "right" :key %}
-                          (name %))
-                       (->> stats-data first keys (remove #{:symbol}) sort)))))
-      (mui/table-body
-        (map #(mui/table-row
-                {:key (:symbol %)}
-                (concat [(mui-x/table-cell (:symbol %))]
-                        (map (fn [key] (mui-x/table-cell {:align "right"} (gstring/format "%.2f" (key %))))
-                             (->> stats-data first keys (remove #{:symbol}) sort))))
-             stats-data)))))
+  [:> TableContainer {}
+   [:> Table {}
+    [:> TableHead {}
+     [:> TableRow {:sx {:backgroundColor "lightgray"}}
+      (concat [[:> TableCell {} "Symbol"]]
+              (map (fn [column] [:> TableCell {:align "right" :key column}
+                                 (name column)])
+                   (->> stats-data first keys (remove #{:symbol}) sort)))]]
+    [:> TableBody {}
+     (map (fn [row] [:> TableRow {:key (:symbol row)}
+                     (concat [[:> TableCell (:symbol row)]]
+                             (map (fn [key] [:> TableCell {:align "right"} (gstring/format "%.2f" (key row))])
+                                  (->> stats-data first keys (remove #{:symbol}) sort)))])
+          stats-data)]]])
 
 (rum/defc frequency-period-control < rum/reactive []
-  (mui-x/stack
-    {:direction   "row"
-     :align-items "center"
-     :spacing     1
-     :padding-top 1}
-    (mui/form-control
-      {:sx {:m 1 :minWidth 180}}
-      (mui/input-label "Period Type")
-      (mui/select
-        {:value     (:period-type (rum/react component-state))
-         :label     "Period Type"
-         :on-change #(swap! component-state assoc :period-type (keyword (.. % -target -value)))}
-        (map #(mui/menu-item {:key % :value %} (name %)) period-types)))
-    (mui/form-control
-      {:sx {:m 1 :minWidth 90}}
-      (mui/input-label "# Periods")
-      (mui/select
-        {:value     (:periods (rum/react component-state))
-         :label     "# Periods"
-         :on-change #(swap! component-state assoc :periods (.. % -target -value))}
-        (map #(mui/menu-item {:key % :value %} %) ((:period-type (rum/react component-state)) valid-periods))))
-    (mui/form-control
-      {:sx {:m 1 :minWidth 180}}
-      (mui/input-label "Frequency Type")
-      (mui/select
-        {:value     (:frequency-type (rum/react component-state))
-         :label     "Frequency Type"
-         :on-change #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))}
-        (map #(mui/menu-item {:key % :value %} (name %)) ((:period-type (rum/react component-state)) valid-frequency-type-for-period))))
-    (mui/form-control
-      {:sx {:m 1 :minWidth 90}}
-      (mui/input-label "Frequency")
-      (mui/select
-        {:value     (:frequency (rum/react component-state))
-         :label     "Frequency"
-         :on-change #(swap! component-state assoc :frequency (.. % -target -value))}
-        (map #(mui/menu-item {:key % :value %} %) ((:frequency-type (rum/react component-state)) valid-frequencies))))))
+  [:> Stack {:direction  "row"
+             :alignItems "center"
+             :spacing    1
+             :paddingTop 1}
+   [:> FormControl {:sx {:m 1 :minWidth 180}}
+    [:> InputLabel {} "Period Type"]
+    [:> Select {:value    (:period-type (rum/react component-state))
+                :label    "Period Type"
+                :onChange #(swap! component-state assoc :period-type (keyword (.. % -target -value)))}
+     (map (fn [period-type] [:> MenuItem {:key period-type :value period-type} (name period-type)]) period-types)]]
+   [:> FormControl {:sx {:m 1 :minWidth 90}}
+    [:> InputLabel {} "# Periods"]
+    [:> Select {:value    (:periods (rum/react component-state))
+                :label    "# Periods"
+                :onChange #(swap! component-state assoc :periods (.. % -target -value))}
+     (map (fn [periods] [:> MenuItem {:key periods :value periods} periods]) ((:period-type (rum/react component-state)) valid-periods))]]
+   [:> FormControl {:sx {:m 1 :minWidth 180}}
+    [:> InputLabel {} "Frequency Type"]
+    [:> Select {:value    (:frequency-type (rum/react component-state))
+                :label    "Frequency Type"
+                :onChange #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))}
+     (map (fn [frequency-type] [:> MenuItem {:key frequency-type :value frequency-type} (name frequency-type)]) ((:period-type (rum/react component-state)) valid-frequency-type-for-period))]]
+   [:> FormControl {:sx {:m 1 :minWidth 90}}
+    [:> InputLabel "Frequency"]
+    [:> Select {:value    (:frequency (rum/react component-state))
+                :label    "Frequency"
+                :onChange #(swap! component-state assoc :frequency (.. % -target -value))}
+     (map (fn [frequency] [:> MenuItem {:key frequency :value frequency} frequency]) ((:frequency-type (rum/react component-state)) valid-frequencies))]]])
 
 (rum/defc start-end-control < rum/reactive []
-  (mui-x/stack
-    {:direction "column" :spacing 0.5}
-    (mui-x/stack
-      {:direction "row" :spacing 0.5}
-      (mui/form-control-label
-        {:label   "Use Start Date"
-         :control (mui/switch {:on-change #(swap! component-state
-                                                  assoc
-                                                  :use-start-date
-                                                  (.. % -target -checked))
-                               :checked   (:use-start-date (rum/react component-state))})})
-      (when (:use-start-date (rum/react component-state))
-        (date-selector (:start-date (rum/react component-state))
-                       #(swap! component-state assoc :start-date %))))
-    (mui-x/stack
-      {:direction "row" :soacing 0.5}
-      (mui/form-control-label
-        {:label   "Use End Date"
-         :control (mui/switch {:on-change #(swap! component-state
-                                                  assoc
-                                                  :use-end-date
-                                                  (.. % -target -checked))
-                               :checked   (:use-end-date (rum/react component-state))})})
-      (when (:use-end-date (rum/react component-state))
-        (date-selector (:end-date (rum/react component-state))
-                       #(swap! component-state assoc :end-date %))))))
+  [:> Stack {:direction "column" :spacing 0.5}
+   [:> Stack {:direction "row" :spacing 0.5}
+    [:> FormControlLabel {:label   "Use Start Date"
+                          :control (rum/adapt-class Switch {:onChange #(swap! component-state
+                                                                              assoc
+                                                                              :use-start-date
+                                                                              (.. % -target -checked))
+                                                            :checked  (:use-start-date (rum/react component-state))})}]
+    (when (:use-start-date (rum/react component-state))
+      (date-selector (:start-date (rum/react component-state))
+                     #(swap! component-state assoc :start-date %)))]
+   [:> Stack {:direction "row" :soacing 0.5}
+    [:> FormControlLabel {:label   "Use End Date"
+                          :control (rum/adapt-class Switch {:onChange #(swap! component-state
+                                                                              assoc
+                                                                              :use-end-date
+                                                                              (.. % -target -checked))
+                                                            :checked  (:use-end-date (rum/react component-state))})}]
+    (when (:use-end-date (rum/react component-state))
+      (date-selector (:end-date (rum/react component-state))
+                     #(swap! component-state assoc :end-date %)))]])
 
 (rum/defc chart-settings []
-  (mui-x/stack
-    {:direction "column" :spacing 0.5}
-    (start-end-control)
-    (frequency-period-control)))
+  [:> Stack {:direction "column" :spacing 0.5}
+   (start-end-control)
+   (frequency-period-control)])
 
 (rum/defc price-history < rum/reactive []
   [:div.horizontal
    [:div
-    (mui-x/stack
-      {:direction "row" :spacing 1}
-      (price-chart (:chart-data (rum/react component-state))))
-    (mui-x/stack
-      {:direction "row" :spacing 1}
-      (chart-settings)
-      (mui/button
-        {:variant  "contained"
-         :on-click refresh-data}
-        "Refresh"))]
+    [:> Stack {:direction "row" :spacing 1}
+     (price-chart (:chart-data (rum/react component-state)))]
+    [:> Stack {:direction "row" :spacing 1}
+     (chart-settings)
+     [:> Button {:variant "contained"
+                 :onClick refresh-data}
+      "Refresh"]]]
    (stats-table (:table-data (rum/react component-state)))])
