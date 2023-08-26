@@ -27,7 +27,7 @@
 (defn initialize-auth-mixin []
   {:will-mount
    (fn [state]
-     (handle-refresh (:signed-in? @app-state) handle-auth-change)
+     (handle-refresh (:signed-in? @app-state) handle-auth-change false)
      state)})
 
 (rum/defc content < rum/reactive (initialize-auth-mixin) []

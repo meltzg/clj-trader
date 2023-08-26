@@ -60,7 +60,7 @@
     [:> MenuItem {:onClick #(handle-refresh signed-in? change-signed-in)}
      "Refresh Status"]
     (if signed-in?
-      [:> MenuItem {:onClick handle-sign-out}
+      [:> MenuItem {:onClick #(handle-sign-out signed-in? change-signed-in)}
        "Sign Out"]
       [:> MenuItem {:onClick initiate-auth}
        "Sign In"])]])
