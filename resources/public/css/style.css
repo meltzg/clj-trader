@@ -6,37 +6,7 @@ body {
 }
 
 html {
-  display: table;
   margin: auto;
-}
-
-body {
-  font: 14px "Century Gothic", Futura, sans-serif;
-  display: table-cell;
-  vertical-align: top;
-}
-
-.authenticator {
-    display: inline-block
-}
-
-.signin-status {
-    border: 1px solid #999;
-    float: left;
-    font-weight: bold;
-    margin-right: -1px;
-    margin-top: -1px;
-    padding: 0;
-    text-align: center;
-    width: 100%;
-}
-
-.signed-in {
-    background-color: green;
-}
-
-.signed-out {
-    background-color: red;
 }
 
 .sidebar {

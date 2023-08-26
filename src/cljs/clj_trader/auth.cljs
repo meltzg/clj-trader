@@ -1,8 +1,15 @@
 (ns clj-trader.auth
   (:require [ajax.core :as ajax]
             [clj-trader.utils :refer [api-url]]
-            ["@mui/material" :refer [Button Stack]]
+            ["@mui/icons-material/AccountCircle$default" :as AccountCircle]
+            ["@mui/material" :refer [Button
+                                     IconButton
+                                     Menu
+                                     MenuItem
+                                     Stack]]
             [rum.core :as rum]))
+
+(def component-state (atom {}))
 
 (defn initiate-auth []
   (ajax/GET (str api-url "oauthUri")
@@ -11,33 +18,49 @@
              :handler         (fn [{:keys [oauth-uri]}]
                                 (.replace (.-location js/window) oauth-uri))}))
 
-(defn refresh-auth-status [current-state on-change]
-  (ajax/GET (str api-url "authStatus")
-            {:response-format :json
-             :keywords?       true
-             :handler         (fn [{:keys [signed-in?]}]
-                                (when-not (= current-state signed-in?)
-                                  (on-change signed-in?)))}))
+(defn handle-menu [event]
+  (swap! component-state assoc :anchor-element (.-currentTarget event)))
 
-(rum/defc auth-status [signed-in?]
-  (if signed-in?
-    [:div.signin-status.signed-in "Connected"]
-    [:div.signin-status.signed-out "Disconnected"]))
+(defn handle-close []
+  (swap! component-state dissoc :anchor-element))
 
-(rum/defc authenticator [signed-in? change-signed-in]
-  (refresh-auth-status signed-in? change-signed-in)
-  [:div.authenticator
-   (auth-status signed-in?)
-   [:> Stack {:direction "row" :spacing 0.5}
-    [:> Button {:variant "contained"
-                :onClick #(refresh-auth-status signed-in? change-signed-in)}
+(defn handle-refresh
+  ([current-status on-change]
+   (handle-refresh current-status on-change true))
+  ([current-state on-change close-menu?]
+   (ajax/GET (str api-url "authStatus")
+             {:response-format :json
+              :keywords?       true
+              :handler         (fn [{:keys [signed-in?]}]
+                                 (when-not (= current-state signed-in?)
+                                   (on-change signed-in?))
+                                 (when close-menu? (handle-close)))})))
+
+(defn handle-sign-out [current-state on-change]
+  (ajax/GET (str api-url "signOut")
+            {:handler #(handle-refresh current-state on-change)}))
+
+(rum/defc authenticator < rum/reactive [signed-in? change-signed-in]
+  ;(handle-refresh signed-in? change-signed-in)
+  [:div
+   [:> IconButton {:size "large"
+                   :aria-label "user brokerage connection status"
+                   :aria-controls "menu-connection"
+                   :aria-haspopup "true"
+                   :onClick handle-menu
+                   :color (if signed-in? "default" "error")}
+    [:> AccountCircle {}]]
+   [:> Menu {:id "menu-connection"
+             :anchorEl (:anchor-element (rum/react component-state))
+             :anchorOrigin {:vertical "top" :horizontal "right"}
+             :keepMounted true
+             :transformOrigin {:vertical "top" :horizontal "right"}
+             :open (some? (:anchor-element (rum/react component-state)))
+             :onClose handle-close}
+    [:> MenuItem {:onClick #(handle-refresh signed-in? change-signed-in)}
      "Refresh Status"]
     (if signed-in?
-      [:> Button {:variant "contained"
-                  :onClick (fn []
-                             (ajax/GET (str api-url "signOut")
-                                       {:handler #(refresh-auth-status signed-in? change-signed-in)}))}
+      [:> MenuItem {:onClick handle-sign-out}
        "Sign Out"]
-      [:> Button {:variant "contained"
-                  :onClick initiate-auth}
+      [:> MenuItem {:onClick initiate-auth}
        "Sign In"])]])

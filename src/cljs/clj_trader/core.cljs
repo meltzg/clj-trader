@@ -1,11 +1,17 @@
 (ns clj-trader.core
   (:require
     [ajax.core :as ajax]
-    [clj-trader.auth :refer [authenticator]]
+    [clj-trader.auth :refer [authenticator, handle-refresh]]
     [clj-trader.price-history :refer [price-history]]
     [clj-trader.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
+    ["@mui/icons-material/Menu$default" :as MenuIcon]
+    ["@mui/material" :refer [AppBar
+                             Box
+                             Toolbar
+                             IconButton
+                             Typography]]
     [rum.core :as rum]))
 
 
@@ -18,13 +24,33 @@
 (defn handle-user-settings-change [user-settings]
   (swap! app-state assoc :user-settings user-settings))
 
-(rum/defc content < rum/reactive []
-  [:div.horizontal
-   [:div.sidebar
-    (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
-    (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)]
-   [:div.mainview
-    (price-history)]])
+(defn initialize-auth-mixin []
+  {:will-mount
+   (fn [state]
+     (handle-refresh (:signed-in? @app-state) handle-auth-change)
+     state)})
+
+(rum/defc content < rum/reactive (initialize-auth-mixin) []
+  [:> Box {:sx {:display "flex"
+                :flexGrow 1}}
+   [:> AppBar {:position "static"}
+    [:> Toolbar
+     [:> IconButton {:size "large"
+                     :edge "start"
+                     :color "inherit"
+                     :aria-label "menu"
+                     :sx {:mr 2}}
+      [:> MenuIcon {}]]
+     [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
+      "CLJ-Trader"]
+     (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)]]
+   ;[:div.horizontal
+   ; [:div.sidebar
+   ;  (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
+   ;  (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)]
+   ; [:div.mainview
+   ;  (price-history)]]
+   ])
 
 (defn mount [el]
   (rum/mount (content) el))
