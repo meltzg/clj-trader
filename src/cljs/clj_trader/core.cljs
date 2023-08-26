@@ -31,15 +31,15 @@
      state)})
 
 (rum/defc content < rum/reactive (initialize-auth-mixin) []
-  [:> Box {:sx {:display "flex"
+  [:> Box {:sx {:display  "flex"
                 :flexGrow 1}}
    [:> AppBar {:position "static"}
     [:> Toolbar
-     [:> IconButton {:size "large"
-                     :edge "start"
-                     :color "inherit"
+     [:> IconButton {:size       "large"
+                     :edge       "start"
+                     :color      "inherit"
                      :aria-label "menu"
-                     :sx {:mr 2}}
+                     :sx         {:mr 2}}
       [:> MenuIcon {}]]
      [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
       "CLJ-Trader"]
