@@ -6,17 +6,27 @@
     [clj-trader.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
+    ["@mui/icons-material/Analytics$default" :as AnalyticsIcon]
     ["@mui/icons-material/Menu$default" :as MenuIcon]
+    ["@mui/icons-material/Settings$default" :as SettingsIcon]
     ["@mui/material" :refer [AppBar
                              Box
-                             Toolbar
+                             Drawer
                              IconButton
+                             List
+                             ListItem
+                             ListItemButton
+                             ListItemIcon
+                             ListItemText
+                             Stack
+                             Toolbar
                              Typography]]
     [rum.core :as rum]))
 
 
-(defonce app-state (atom {:signed-in?    false
-                          :user-settings nil}))
+(defonce app-state (atom {:signed-in?   false
+                          :show-drawer? false
+                          :open-app     :analysis}))
 
 (defn handle-auth-change [signed-in?]
   (swap! app-state assoc :signed-in? signed-in?))
@@ -30,27 +40,54 @@
      (handle-refresh (:signed-in? @app-state) handle-auth-change false)
      state)})
 
+(defn toggle-drawer [event]
+  (when-not (and (some? event)
+                 (= (.-type event) "keydown")
+                 (or (= (.-key event) "Tab")
+                     (= (.-key event) "Shift")))
+    (swap! app-state update :show-drawer? not)))
+
+(defn handle-change-open-app [key]
+  (swap! app-state assoc :open-app key)
+  (toggle-drawer nil))
+
+(defn render-list-item [text icon key]
+  [:> ListItem {:key key}
+   [:> ListItemButton {:onClick #(handle-change-open-app key)}
+    [:> ListItemIcon
+     [:> icon]]
+    [:> ListItemText {:primary text}]]])
+
 (rum/defc content < rum/reactive (initialize-auth-mixin) []
   [:> Box {:sx {:display  "flex"
                 :flexGrow 1}}
-   [:> AppBar {:position "static"}
-    [:> Toolbar
-     [:> IconButton {:size       "large"
-                     :edge       "start"
-                     :color      "inherit"
-                     :aria-label "menu"
-                     :sx         {:mr 2}}
-      [:> MenuIcon {}]]
-     [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
-      "CLJ-Trader"]
-     (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)]]
-   ;[:div.horizontal
-   ; [:div.sidebar
-   ;  (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)
-   ;  (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)]
-   ; [:div.mainview
-   ;  (price-history)]]
-   ])
+   [:> Stack {:direction "column"}
+    [:> AppBar {:position "static"}
+     [:> Toolbar
+      [:> IconButton {:size       "large"
+                      :edge       "start"
+                      :color      "inherit"
+                      :aria-label "menu"
+                      :sx         {:mr 2}
+                      :onClick    toggle-drawer}
+       [:> MenuIcon {}]]
+      [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
+       "CLJ-Trader"]
+      (authenticator (:signed-in? (rum/react app-state)) handle-auth-change)]]
+    [:> Drawer {:sx      {:drawerWidth                   240
+                          :flexShrink                    0
+                          (keyword "& .MuiDrawer-paper") {:width     240
+                                                          :boxSizing "border-box"}}
+                :anchor  "left"
+                :open    (:show-drawer? (rum/react app-state))
+                :onClose toggle-drawer}
+     [:> List
+      (map #(apply render-list-item %) [["Analysis" AnalyticsIcon :analysis]
+                                        ["Auto-Trader" SettingsIcon :auto-trader]])]]
+    [:> Box {:component "main"}
+     (case (:open-app (rum/react app-state))
+       :analysis (price-history)
+       :auto-trader (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change))]]])
 
 (defn mount [el]
   (rum/mount (content) el))

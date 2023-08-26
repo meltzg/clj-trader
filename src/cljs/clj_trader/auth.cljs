@@ -43,20 +43,20 @@
 (rum/defc authenticator < rum/reactive [signed-in? change-signed-in]
   ;(handle-refresh signed-in? change-signed-in)
   [:div
-   [:> IconButton {:size "large"
-                   :aria-label "user brokerage connection status"
+   [:> IconButton {:size          "large"
+                   :aria-label    "user brokerage connection status"
                    :aria-controls "menu-connection"
                    :aria-haspopup "true"
-                   :onClick handle-menu
-                   :color (if signed-in? "default" "error")}
+                   :onClick       handle-menu
+                   :color         (if signed-in? "default" "error")}
     [:> AccountCircle {}]]
-   [:> Menu {:id "menu-connection"
-             :anchorEl (:anchor-element (rum/react component-state))
-             :anchorOrigin {:vertical "top" :horizontal "right"}
-             :keepMounted true
+   [:> Menu {:id              "menu-connection"
+             :anchorEl        (:anchor-element (rum/react component-state))
+             :anchorOrigin    {:vertical "top" :horizontal "right"}
+             :keepMounted     true
              :transformOrigin {:vertical "top" :horizontal "right"}
-             :open (some? (:anchor-element (rum/react component-state)))
-             :onClose handle-close}
+             :open            (some? (:anchor-element (rum/react component-state)))
+             :onClose         handle-close}
     [:> MenuItem {:onClick #(handle-refresh signed-in? change-signed-in)}
      "Refresh Status"]
     (if signed-in?

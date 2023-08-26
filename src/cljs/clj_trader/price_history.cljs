@@ -61,7 +61,7 @@
 
 (def valid-frequencies
   {:minute  [1 5 10 15 30]
-   :daily     [1]
+   :daily   [1]
    :weekly  [1]
    :monthly [1]})
 

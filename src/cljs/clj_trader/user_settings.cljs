@@ -49,7 +49,7 @@
                 :divider true}
    [:> ListItemText {:primary symbol}]
    [:> ListItemIcon
-    [:> IconButton {:color "error"
+    [:> IconButton {:color   "error"
                     :onClick #(swap! component-state
                                      update-in
                                      [:settings :symbols]
