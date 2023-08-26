@@ -160,7 +160,7 @@
   (load-access-info td-brokerage (-> config :config :keystore-pass)))
 
 (defmethod execute-command :price-history [{:keys [td-brokerage config] :as command}]
-  (map (fn [symbol]
+  (pmap (fn [symbol]
          (->> (assoc command :symbol symbol)
               command->request
               (make-authenticated-request td-brokerage config)
