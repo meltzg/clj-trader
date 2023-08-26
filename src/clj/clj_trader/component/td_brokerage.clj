@@ -139,15 +139,16 @@
 
 (defmethod execute-command :refresh-access-token [{:keys [td-brokerage config] :as command}]
   (let [{:keys [refresh-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
-    (try
-      (->> (assoc command :refresh-token refresh-token)
-           command->request
-           make-request
-           :body
-           format-sign-in-response
-           (save-access-info! td-brokerage (-> config :config :keystore-pass)))
-      (catch Exception e
-        (println "Refresh access token failed" e)))
+    (when refresh-token
+      (try
+        (->> (assoc command :refresh-token refresh-token)
+             command->request
+             make-request
+             :body
+             format-sign-in-response
+             (save-access-info! td-brokerage (-> config :config :keystore-pass)))
+        (catch Exception e
+          (println "Refresh access token failed" e))))
     (load-access-info td-brokerage (-> config :config :keystore-pass))))
 
 (defmethod execute-command :auth-status [{:keys [td-brokerage config]}]
@@ -161,13 +162,13 @@
 
 (defmethod execute-command :price-history [{:keys [td-brokerage config] :as command}]
   (pmap (fn [symbol]
-         (->> (assoc command :symbol symbol)
-              command->request
-              (make-authenticated-request td-brokerage config)
-              :body
-              format-price-history
-              calc-stats))
-       (-> config :user-settings deref :symbols)))
+          (->> (assoc command :symbol symbol)
+               command->request
+               (make-authenticated-request td-brokerage config)
+               :body
+               format-price-history
+               calc-stats))
+        (-> config :user-settings deref :symbols)))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))
