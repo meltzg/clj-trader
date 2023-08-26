@@ -2,7 +2,7 @@
   (:require [ajax.core :as ajax]
             [clj-trader.date-selector :refer [date-selector]]
             [clj-trader.utils :as utils :refer [api-url]]
-            ["@canvasjs/react-charts" :as CanvasJSReact]
+            ["@canvasjs/react-charts$default" :as CanvasJSReact]
             ["@mui/material" :refer [Button
                                      FormControl
                                      FormControlLabel
@@ -22,7 +22,7 @@
             [goog.string.format]
             [rum.core :as rum]))
 
-(def CanvasJSChart (.. CanvasJSReact -default -CanvasJSChart))
+(def CanvasJSChart (.-CanvasJSChart CanvasJSReact))
 
 (def component-state (atom {:use-start-date false
                             :use-end-date   false
@@ -43,7 +43,7 @@
 
 (def frequency-types
   [:minute
-   :day
+   :daily
    :weekly
    :monthly])
 
@@ -55,13 +55,13 @@
 
 (def valid-frequency-type-for-period
   {:day   [:minute]
-   :month [:day :weekly]
-   :year  [:day :weekly :monthly]
-   :ytd   [:day :weekly]})
+   :month [:daily :weekly]
+   :year  [:daily :weekly :monthly]
+   :ytd   [:daily :weekly]})
 
 (def valid-frequencies
   {:minute  [1 5 10 15 30]
-   :day     [1]
+   :daily     [1]
    :weekly  [1]
    :monthly [1]})
 
