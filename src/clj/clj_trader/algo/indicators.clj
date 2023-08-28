@@ -1,4 +1,4 @@
-(ns clj-trader.component.indicators)
+(ns clj-trader.algo.indicators)
 
 (defn average [col]
   (/ (apply + col) (count col)))
