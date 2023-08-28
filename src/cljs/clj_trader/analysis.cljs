@@ -208,8 +208,8 @@
    (frequency-period-control)])
 
 (rum/defc analysis-app < rum/reactive []
-  [:div.horizontal
-   [:div
+  [:> Stack {:direction "row" :spacing 1}
+   [:> Stack {:direction "column" :spacing 1}
     [:> Stack {:direction "row" :spacing 1}
      (price-chart (:chart-data (rum/react component-state)))]
     [:> Stack {:direction "row" :spacing 1}

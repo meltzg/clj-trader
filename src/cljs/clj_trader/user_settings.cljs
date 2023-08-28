@@ -1,22 +1,15 @@
 (ns clj-trader.user-settings
   (:require [ajax.core :as ajax]
+            [clj-trader.symbol-list :refer [symbol-list]]
             [clj-trader.utils :refer [api-url]]
-            [clojure.string :refer [upper-case]]
-            ["@mui/icons-material/Delete$default" :as DeleteIcon]
             ["@mui/material" :refer [Button
                                      FormControlLabel
-                                     IconButton
-                                     List
-                                     ListItem
-                                     ListItemIcon
-                                     ListItemText
                                      Stack
                                      Switch
                                      TextField]]
             [rum.core :as rum]))
 
-(def component-state (atom {:settings {}
-                            :symbol   nil}))
+(def component-state (atom {:settings {}}))
 
 (defn refresh-settings-mixin []
   {:will-mount
@@ -37,25 +30,6 @@
              :format          :json
              :response-format :json
              :keywords?       true}))
-
-(defn handle-type-symbol [event]
-  (when (= "Enter" (.-key event))
-    (do
-      (swap! component-state update-in [:settings :symbols] #(sort (set (conj % (upper-case (.. event -target -value))))))
-      (swap! component-state assoc :symbol nil))))
-
-(defn render-symbol-item [symbol]
-  [:> ListItem {:key     symbol
-                :divider true}
-   [:> ListItemText {:primary symbol}]
-   [:> ListItemIcon
-    [:> IconButton {:color   "error"
-                    :onClick #(swap! component-state
-                                     update-in
-                                     [:settings :symbols]
-                                     (fn [symbols]
-                                       (remove #{symbol} symbols)))}
-     [:> DeleteIcon]]]])
 
 (rum/defc settings-panel < rum/reactive (refresh-settings-mixin) [initial-settings change-settings]
   (when (empty? initial-settings)
@@ -100,17 +74,10 @@
                   :value      (or (-> (rum/react component-state)
                                       :settings
                                       :position-size) "")}]
-   [:> TextField {:label     "Add New Symbol"
-                  :onKeyDown handle-type-symbol
-                  :onChange  #(swap! component-state
-                                     assoc
-                                     :symbol
-                                     (.. % -target -value))
-                  :value     (or (:symbol (rum/react component-state)) "")}]
-   [:> List
-    (map render-symbol-item (-> (rum/react component-state)
-                                :settings
-                                :symbols))]
+   (symbol-list (-> (rum/react component-state)
+                    :settings
+                    :symbols)
+                #(swap! component-state assoc-in [:settings :symbols] %))
    [:> Stack {:direction "row"
               :spacing   1}
     [:> Button {:variant  "contained"
