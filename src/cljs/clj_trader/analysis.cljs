@@ -1,4 +1,4 @@
-(ns clj-trader.price-history
+(ns clj-trader.analysis
   (:require [ajax.core :as ajax]
             [clj-trader.date-selector :refer [date-selector]]
             [clj-trader.utils :as utils :refer [api-url]]
@@ -207,7 +207,7 @@
    (start-end-control)
    (frequency-period-control)])
 
-(rum/defc price-history < rum/reactive []
+(rum/defc analysis-app < rum/reactive []
   [:div.horizontal
    [:div
     [:> Stack {:direction "row" :spacing 1}

@@ -2,7 +2,7 @@
   (:require
     [ajax.core :as ajax]
     [clj-trader.auth :refer [authenticator, handle-refresh]]
-    [clj-trader.price-history :refer [price-history]]
+    [clj-trader.analysis :refer [analysis-app]]
     [clj-trader.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
@@ -86,7 +86,7 @@
                                         ["Auto-Trader" SettingsIcon :auto-trader]])]]
     [:> Box {:component "main"}
      (case (:open-app (rum/react app-state))
-       :analysis (price-history)
+       :analysis (analysis-app)
        :auto-trader (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change))]]])
 
 (defn mount [el]
