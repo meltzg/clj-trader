@@ -1,4 +1,4 @@
-(ns clj-trader.auth
+(ns clj-trader.apps.auth
   (:require [ajax.core :as ajax]
             [clj-trader.utils :refer [api-url]]
             ["@mui/icons-material/AccountCircle$default" :as AccountCircle]
@@ -41,7 +41,6 @@
             {:handler #(handle-refresh current-state on-change)}))
 
 (rum/defc authenticator < rum/reactive [signed-in? change-signed-in]
-  ;(handle-refresh signed-in? change-signed-in)
   [:div
    [:> IconButton {:size          "large"
                    :aria-label    "user brokerage connection status"

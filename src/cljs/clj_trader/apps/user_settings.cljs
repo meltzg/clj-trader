@@ -1,6 +1,6 @@
-(ns clj-trader.user-settings
+(ns clj-trader.apps.user-settings
   (:require [ajax.core :as ajax]
-            [clj-trader.symbol-list :refer [symbol-list]]
+            [clj-trader.components.symbol-list :refer [symbol-list]]
             [clj-trader.utils :refer [api-url]]
             ["@mui/material" :refer [Button
                                      FormControlLabel

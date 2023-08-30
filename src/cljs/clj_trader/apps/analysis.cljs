@@ -1,6 +1,6 @@
-(ns clj-trader.analysis
+(ns clj-trader.apps.analysis
   (:require [ajax.core :as ajax]
-            [clj-trader.date-selector :refer [date-selector]]
+            [clj-trader.components.date-selector :refer [date-selector]]
             [clj-trader.utils :as utils :refer [api-url]]
             ["@canvasjs/react-charts$default" :as CanvasJSReact]
             ["@mui/material" :refer [Button

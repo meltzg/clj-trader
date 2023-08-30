@@ -1,4 +1,4 @@
-(ns clj-trader.symbol-list
+(ns clj-trader.components.symbol-list
   (:require [clojure.string :refer [upper-case]]
             ["@mui/icons-material/Delete$default" :as DeleteIcon]
             ["@mui/material" :refer [IconButton

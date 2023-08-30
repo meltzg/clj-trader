@@ -1,9 +1,9 @@
 (ns clj-trader.core
   (:require
     [ajax.core :as ajax]
-    [clj-trader.auth :refer [authenticator, handle-refresh]]
-    [clj-trader.analysis :refer [analysis-app]]
-    [clj-trader.user-settings :refer [settings-panel]]
+    [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
+    [clj-trader.apps.analysis :refer [analysis-app]]
+    [clj-trader.apps.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
     ["@mui/icons-material/Analytics$default" :as AnalyticsIcon]
