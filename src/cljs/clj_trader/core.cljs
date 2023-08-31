@@ -61,7 +61,8 @@
 (rum/defc content < rum/reactive (initialize-auth-mixin) []
   [:> Box {:sx {:display  "flex"
                 :flexGrow 1}}
-   [:> Stack {:direction "column"}
+   [:> Stack {:direction "column"
+              :sx {:width "-moz-available"}}
     [:> AppBar {:position "static"}
      [:> Toolbar
       [:> IconButton {:size       "large"

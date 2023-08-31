@@ -25,3 +25,40 @@ html {
     max-width: 100%;
     height: 100%;
 }
+
+.header {
+  grid-area: header;
+}
+
+.main-view {
+  grid-area: content;
+}
+
+.side-bar {
+  grid-area: sidebar;
+  width: fit-content;
+}
+
+.footer {
+  grid-area: footer;
+}
+
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr 7fr;
+  grid-template-areas:
+    "header  header"
+    "sidebar content"
+    "footer  footer";
+}
+
+@media (max-width: 1000px) {
+  .wrapper {
+    grid-template-columns: 8fr;
+    grid-template-areas:
+      "header"
+      "content"
+      "sidebar"
+      "footer";
+  }
+}

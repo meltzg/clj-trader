@@ -1,9 +1,12 @@
 (ns clj-trader.apps.analysis
   (:require [ajax.core :as ajax]
             [clj-trader.components.date-selector :refer [date-selector]]
+            [clj-trader.components.symbol-list :refer [symbol-list]]
             [clj-trader.utils :as utils :refer [api-url]]
             ["@canvasjs/react-charts$default" :as CanvasJSReact]
-            ["@mui/material" :refer [Button
+            ["@mui/material" :refer [Box
+                                     Button
+                                     Drawer
                                      FormControl
                                      FormControlLabel
                                      InputLabel
@@ -33,7 +36,8 @@
                             :start-date     (utils/yesterday)
                             :end-date       (js/Date.)
                             :chart-data     []
-                            :table-data     []}))
+                            :table-data     []
+                            :symbols        []}))
 
 (def period-types
   [:day
@@ -208,13 +212,17 @@
    (frequency-period-control)])
 
 (rum/defc analysis-app < rum/reactive []
-  [:> Stack {:direction "row" :spacing 1}
-   [:> Stack {:direction "column" :spacing 1}
+  [:div.wrapper
+   [:div.side-bar
+    (symbol-list (:symbols (rum/react component-state))
+                 #(swap! component-state assoc :symbols %))]
+   [:div.main-view
     [:> Stack {:direction "row" :spacing 1}
-     (price-chart (:chart-data (rum/react component-state)))]
+     (price-chart (:chart-data (rum/react component-state)))
+     (stats-table (:table-data (rum/react component-state)))]]
+   [:div.footer
     [:> Stack {:direction "row" :spacing 1}
      (chart-settings)
      [:> Button {:variant "contained"
                  :onClick refresh-data}
-      "Refresh"]]]
-   (stats-table (:table-data (rum/react component-state)))])
+      "Refresh"]]]])
