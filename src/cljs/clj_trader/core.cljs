@@ -3,7 +3,6 @@
     [ajax.core :as ajax]
     [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
     [clj-trader.apps.analysis :refer [analysis-app]]
-    [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
     [clj-trader.apps.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
@@ -41,15 +40,34 @@
      (handle-refresh (:signed-in? @app-state) handle-auth-change false)
      state)})
 
-(defn initialize-period-frequency-info []
+(defn initialize-user-settings-mixin []
+  {:will-mount
+   (fn [state]
+     (ajax/GET (str api-url "userSettings")
+               {:response-format :json
+                :keywords?       true?
+                :handler         (fn [body]
+                                   (swap! app-state assoc :user-settings body))})
+     state)})
+
+(defn initialize-period-frequency-info-mixin []
   {:will-mount
    (fn [state]
      (ajax/GET (str api-url "periodFrequencyInfo")
                {:response-format :json
                 :keywords?       true?
                 :handler         (fn [body]
-                                   (prn body)
                                    (swap! app-state assoc :period-frequency-info body))})
+     state)})
+
+(defn initialize-indicator-config-info-mixin []
+  {:will-mount
+   (fn [state]
+     (ajax/GET (str api-url "indicatorConfigInfo")
+               {:response-format :json
+                :keywords?       true?
+                :handler         (fn [body]
+                                   (swap! app-state assoc :indicator-config-info body))})
      state)})
 
 (defn toggle-drawer [event]
@@ -70,7 +88,11 @@
      [:> icon]]
     [:> ListItemText {:primary text}]]])
 
-(rum/defc content < rum/reactive (initialize-auth-mixin) (initialize-period-frequency-info) []
+(rum/defc content < rum/reactive
+                    (initialize-auth-mixin)
+                    (initialize-user-settings-mixin)
+                    (initialize-period-frequency-info-mixin)
+                    (initialize-indicator-config-info-mixin) []
   [:> Box {:sx {:display  "flex"
                 :flexGrow 1}}
    [:> Stack {:direction "column"
@@ -99,7 +121,9 @@
                                         ["Auto-Trader" SettingsIcon :auto-trader]])]]
     [:> Box {:component "main"}
      (case (:open-app (rum/react app-state))
-       :analysis (analysis-app (:period-frequency-info (rum/react app-state)))
+       :analysis (analysis-app (-> (rum/react app-state) :user-settings :symbols)
+                               (:period-frequency-info (rum/react app-state))
+                               (:indicator-config-info (rum/react app-state)))
        :auto-trader (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change))]]])
 
 (defn mount [el]

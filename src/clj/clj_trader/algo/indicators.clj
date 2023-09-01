@@ -2,13 +2,13 @@
   (:import (java.lang Math)))
 
 (def config-map {:sma       {:name "Simple Moving Average"
-                              :opts {:periods {:type :int
-                                               :min  1}}}
-                  :bollinger {:name "Bollinger Bands"
-                              :opts {:periods      {:type :int
-                                                    :min  1}
-                                     :num-std-devs {:type :int
-                                                    :min  1}}}})
+                             :opts {:periods {:type :int
+                                              :min  1}}}
+                 :bollinger {:name "Bollinger Bands"
+                             :opts {:periods      {:type :int
+                                                   :min  1}
+                                    :num-std-devs {:type :int
+                                                   :min  1}}}})
 
 (defn average [col]
   (/ (reduce + col) (count col)))

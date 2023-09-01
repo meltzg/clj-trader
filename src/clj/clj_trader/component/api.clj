@@ -1,5 +1,6 @@
 (ns clj-trader.component.api
   (:require [clj-time.coerce :as tc]
+            [clj-trader.algo.indicators :as indicators]
             [clj-trader.component.config :as config]
             [clj-trader.component.td-brokerage :as td]
             [com.stuartsierra.component :as component]
@@ -71,6 +72,7 @@
                                                 deref))))
     (GET "/api/priceHistory" {params :params} (partial price-history-handler config td-brokerage params))
     (GET "/api/periodFrequencyInfo" [] (fn [_] (response td/period-frequency-info)))
+    (GET "/api/indicatorConfigInfo" [] (fn [_] (response indicators/config-map)))
     (route/resources "/")
     (route/not-found "Not Found")))
 

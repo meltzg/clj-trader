@@ -11,16 +11,6 @@
 
 (def component-state (atom {:settings {}}))
 
-(defn refresh-settings-mixin []
-  {:will-mount
-   (fn [state]
-     (ajax/GET (str api-url "userSettings")
-               {:handler         (fn [data]
-                                   (swap! component-state assoc :settings data))
-                :response-format :json
-                :keywords?       true})
-     state)})
-
 (defn handle-save [onChange]
   (ajax/PUT (str api-url "userSettings")
             {:params          (:settings @component-state)
@@ -31,9 +21,8 @@
              :response-format :json
              :keywords?       true}))
 
-(rum/defc settings-panel < rum/reactive (refresh-settings-mixin) [initial-settings change-settings]
-  (when (empty? initial-settings)
-    (change-settings (:settings @component-state)))
+(rum/defc settings-panel < rum/reactive [initial-settings change-settings]
+  (swap! component-state assoc :settings initial-settings)
   [:> Stack {:direction       "column"
              :spacing         1
              :justify-content "flex-start"
