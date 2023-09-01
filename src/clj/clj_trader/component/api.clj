@@ -70,6 +70,7 @@
                                                 :user-settings
                                                 deref))))
     (GET "/api/priceHistory" {params :params} (partial price-history-handler config td-brokerage params))
+    (GET "/api/periodFrequencyInfo" [] (fn [_] (response td/period-frequency-info)))
     (route/resources "/")
     (route/not-found "Not Found")))
 

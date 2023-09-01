@@ -39,36 +39,6 @@
                             :table-data     []
                             :symbols        []}))
 
-(def period-types
-  [:day
-   :month
-   :year
-   :ytd])
-
-(def frequency-types
-  [:minute
-   :daily
-   :weekly
-   :monthly])
-
-(def valid-periods
-  {:day   [1 2 3 4 5 10]
-   :month [1 2 3 6]
-   :year  [1 2 3 5 10 15 20]
-   :ytd   [1]})
-
-(def valid-frequency-type-for-period
-  {:day   [:minute]
-   :month [:daily :weekly]
-   :year  [:daily :weekly :monthly]
-   :ytd   [:daily :weekly]})
-
-(def valid-frequencies
-  {:minute  [1 5 10 15 30]
-   :daily   [1]
-   :weekly  [1]
-   :monthly [1]})
-
 (defn price-history->chart-data [{:keys [symbol price-candles]}]
   {:type               "candlestick"
    :showInLegend       true
@@ -149,7 +119,7 @@
                :onChange on-change}
     (map item-renderer items)]])
 
-(rum/defc frequency-period-control < rum/reactive []
+(rum/defc frequency-period-control < rum/reactive [period-frequency-info]
   [:> Stack {:direction  "row"
              :alignItems "center"
              :spacing    1
@@ -157,28 +127,28 @@
    (form-selector {:value         (name (:period-type (rum/react component-state)))
                    :label         "Period Type"
                    :on-change     #(swap! component-state assoc :period-type (keyword (.. % -target -value)))
-                   :items         period-types
+                   :items         (:period-types period-frequency-info)
                    :item-renderer (fn [period-type]
                                     [:> MenuItem {:key period-type :value (name period-type)}
                                      (name period-type)])})
    (form-selector {:value         (:periods (rum/react component-state))
                    :label         "# Periods"
                    :on-change     #(swap! component-state assoc :periods (.. % -target -value))
-                   :items         ((:period-type (rum/react component-state)) valid-periods)
+                   :items         ((:period-type (rum/react component-state)) (:valid-periods period-frequency-info))
                    :item-renderer (fn [periods]
                                     [:> MenuItem {:key periods :value periods}
                                      periods])})
    (form-selector {:value         (name (:frequency-type (rum/react component-state)))
                    :label         "Frequency Type"
                    :on-change     #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))
-                   :items         ((:period-type (rum/react component-state)) valid-frequency-type-for-period)
+                   :items         ((:period-type (rum/react component-state)) (:valid-frequency-type-for-period period-frequency-info))
                    :item-renderer (fn [frequency-type]
                                     [:> MenuItem {:key frequency-type :value (name frequency-type)}
                                      (name frequency-type)])})
    (form-selector {:value         (:frequency (rum/react component-state))
                    :label         "Frequency"
                    :on-change     #(swap! component-state assoc :frequency (.. % -target -value))
-                   :items         ((:frequency-type (rum/react component-state)) valid-frequencies)
+                   :items         ((:frequency-type (rum/react component-state)) (:valid-frequencies period-frequency-info))
                    :item-renderer (fn [frequency]
                                     [:> MenuItem {:key frequency :value frequency}
                                      frequency])})])
@@ -206,12 +176,12 @@
       (date-selector (:end-date (rum/react component-state))
                      #(swap! component-state assoc :end-date %)))]])
 
-(rum/defc chart-settings []
+(rum/defc chart-settings [period-frequency-info]
   [:> Stack {:direction "column" :spacing 0.5}
    (start-end-control)
-   (frequency-period-control)])
+   (frequency-period-control period-frequency-info)])
 
-(rum/defc analysis-app < rum/reactive []
+(rum/defc analysis-app < rum/reactive [period-frequency-info]
   [:div.wrapper
    [:div.side-bar
     (symbol-list (:symbols (rum/react component-state))
@@ -222,7 +192,7 @@
      (stats-table (:table-data (rum/react component-state)))]]
    [:div.footer
     [:> Stack {:direction "row" :spacing 1}
-     (chart-settings)
+     (chart-settings period-frequency-info)
      [:> Button {:variant "contained"
                  :onClick refresh-data}
       "Refresh"]]]])

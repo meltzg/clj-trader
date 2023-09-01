@@ -3,6 +3,7 @@
     [ajax.core :as ajax]
     [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
     [clj-trader.apps.analysis :refer [analysis-app]]
+    [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
     [clj-trader.apps.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
@@ -40,6 +41,17 @@
      (handle-refresh (:signed-in? @app-state) handle-auth-change false)
      state)})
 
+(defn initialize-period-frequency-info []
+  {:will-mount
+   (fn [state]
+     (ajax/GET (str api-url "periodFrequencyInfo")
+               {:response-format :json
+                :keywords?       true?
+                :handler         (fn [body]
+                                   (prn body)
+                                   (swap! app-state assoc :period-frequency-info body))})
+     state)})
+
 (defn toggle-drawer [event]
   (when-not (and (some? event)
                  (= (.-type event) "keydown")
@@ -58,11 +70,11 @@
      [:> icon]]
     [:> ListItemText {:primary text}]]])
 
-(rum/defc content < rum/reactive (initialize-auth-mixin) []
+(rum/defc content < rum/reactive (initialize-auth-mixin) (initialize-period-frequency-info) []
   [:> Box {:sx {:display  "flex"
                 :flexGrow 1}}
    [:> Stack {:direction "column"
-              :sx {:width "-moz-available"}}
+              :sx        {:width "-moz-available"}}
     [:> AppBar {:position "static"}
      [:> Toolbar
       [:> IconButton {:size       "large"
@@ -87,7 +99,7 @@
                                         ["Auto-Trader" SettingsIcon :auto-trader]])]]
     [:> Box {:component "main"}
      (case (:open-app (rum/react app-state))
-       :analysis (analysis-app)
+       :analysis (analysis-app (:period-frequency-info (rum/react app-state)))
        :auto-trader (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change))]]])
 
 (defn mount [el]
