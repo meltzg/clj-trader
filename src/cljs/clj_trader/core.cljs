@@ -35,13 +35,13 @@
   (swap! app-state assoc :user-settings user-settings))
 
 (defn initialize-auth-mixin []
-  {:will-mount
+  {:init
    (fn [state]
      (handle-refresh (:signed-in? @app-state) handle-auth-change false)
      state)})
 
 (defn initialize-user-settings-mixin []
-  {:will-mount
+  {:init
    (fn [state]
      (ajax/GET (str api-url "userSettings")
                {:response-format :json
@@ -51,7 +51,7 @@
      state)})
 
 (defn initialize-period-frequency-info-mixin []
-  {:will-mount
+  {:init
    (fn [state]
      (ajax/GET (str api-url "periodFrequencyInfo")
                {:response-format :json
@@ -61,7 +61,7 @@
      state)})
 
 (defn initialize-indicator-config-info-mixin []
-  {:will-mount
+  {:init
    (fn [state]
      (ajax/GET (str api-url "indicatorConfigInfo")
                {:response-format :json
@@ -87,6 +87,11 @@
     [:> ListItemIcon
      [:> icon]]
     [:> ListItemText {:primary text}]]])
+
+(defn app-visibility [app open-app]
+  (if (= app open-app)
+    "block"
+    "none"))
 
 (rum/defc content < rum/reactive
                     (initialize-auth-mixin)
@@ -119,12 +124,14 @@
      [:> List
       (map #(apply render-list-item %) [["Analysis" AnalyticsIcon :analysis]
                                         ["Auto-Trader" SettingsIcon :auto-trader]])]]
-    [:> Box {:component "main"}
-     (case (:open-app (rum/react app-state))
-       :analysis (analysis-app (-> (rum/react app-state) :user-settings :symbols)
-                               (:period-frequency-info (rum/react app-state))
-                               (:indicator-config-info (rum/react app-state)))
-       :auto-trader (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change))]]])
+    [:> Box {:component "main"
+             :sx {:display (app-visibility :analysis (:open-app (rum/react app-state)))}}
+     (analysis-app (-> (rum/react app-state) :user-settings :symbols)
+                   (:period-frequency-info (rum/react app-state))
+                   (:indicator-config-info (rum/react app-state)))]
+    [:> Box {:component "main"
+             :sx {:display (app-visibility :auto-trader (:open-app (rum/react app-state)))}}
+     (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)]]])
 
 (defn mount [el]
   (rum/mount (content) el))
