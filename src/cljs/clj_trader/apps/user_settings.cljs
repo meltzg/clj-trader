@@ -9,7 +9,7 @@
                                      TextField]]
             [rum.core :as rum]))
 
-(def component-state (atom {:settings {}}))
+(def component-state (atom {}))
 
 (defn handle-save [onChange]
   (ajax/PUT (str api-url "userSettings")
@@ -22,7 +22,8 @@
              :keywords?       true}))
 
 (rum/defc settings-panel < rum/reactive [initial-settings change-settings]
-  (swap! component-state assoc :settings initial-settings)
+  (when-not (:settings @component-state)
+    (swap! component-state assoc :settings initial-settings))
   [:> Stack {:direction       "column"
              :spacing         1
              :justify-content "flex-start"

@@ -182,7 +182,8 @@
    (frequency-period-control period-frequency-info)])
 
 (rum/defc analysis-app < rum/reactive [initial-symbols period-frequency-info indicator-config-info]
-  (swap! component-state assoc :symbols initial-symbols)
+  (when (empty? (:symbols @component-state))
+    (swap! component-state assoc :symbols initial-symbols))
   [:div.wrapper
    [:div.side-bar
     (symbol-list (:symbols (rum/react component-state))
