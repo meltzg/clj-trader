@@ -181,7 +181,7 @@
   (secrets/save-keystore! (:keystore td-brokerage) (-> config :config :keystore-pass) secrets-file)
   (load-access-info td-brokerage (-> config :config :keystore-pass)))
 
-(defmethod execute-command :price-history [{:keys [td-brokerage config] :as command}]
+(defmethod execute-command :price-history [{:keys [td-brokerage config params] :as command}]
   (pmap (fn [symbol]
           (->> (assoc command :symbol symbol)
                command->request
@@ -189,7 +189,8 @@
                :body
                format-price-history
                calc-stats))
-        (-> config :user-settings deref :symbols)))
+        (or (:symbols params)
+            (-> config :user-settings deref :symbols))))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))

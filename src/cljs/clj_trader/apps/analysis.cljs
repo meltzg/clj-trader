@@ -64,7 +64,8 @@
              :params          (-> {:period-type    (:period-type @component-state)
                                    :periods        (:periods @component-state)
                                    :frequency-type (:frequency-type @component-state)
-                                   :frequency      (:frequency @component-state)}
+                                   :frequency      (:frequency @component-state)
+                                   :symbols (:symbols @component-state)}
                                   (conj (when (:use-start-date @component-state)
                                           [:start-date (.getTime (:start-date @component-state))]))
                                   (conj (when (:use-end-date @component-state)
