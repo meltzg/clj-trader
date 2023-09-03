@@ -7,6 +7,7 @@
                                      ListItemIcon
                                      ListItemText
                                      Stack
+                                     Switch
                                      TextField]]
             [rum.core :as rum]))
 
@@ -19,11 +20,16 @@
                      sort))
       (set! (.. event -target -value) ""))))
 
-(defn render-symbol-item [symbols on-change symbol]
+(defn render-symbol-item [symbols on-change toggleable enabled-symbols on-enable-change symbol]
   [:> ListItem {:key     symbol
                 :divider true}
    [:> ListItemText {:primary symbol}]
    [:> ListItemIcon
+    [:> Switch {:disabled (not toggleable)
+                :checked (some? (some #{symbol} enabled-symbols))
+                :onChange #(on-enable-change (if (.. % -target -checked)
+                                               (conj enabled-symbols symbol)
+                                               (remove #{symbol} enabled-symbols)))}]
     [:> IconButton {:color   "error"
                     :onClick #(on-change (->> symbols
                                               (remove #{symbol})
@@ -31,9 +37,9 @@
                                               sort))}
      [:> DeleteIcon]]]])
 
-(rum/defc symbol-list [symbols on-change]
+(rum/defc symbol-list [symbols on-change toggleable enabled-symbols on-enable-change]
   [:> Stack {:direction "column"}
    [:> TextField {:label     "Add New Symbol"
                   :onKeyDown (partial handle-add-symbol symbols on-change)}]
    [:> List
-    (map (partial render-symbol-item symbols on-change) symbols)]])
+    (map (partial render-symbol-item symbols on-change toggleable enabled-symbols on-enable-change) symbols)]])
