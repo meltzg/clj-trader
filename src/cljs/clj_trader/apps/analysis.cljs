@@ -183,16 +183,26 @@
    (start-end-control)
    (frequency-period-control period-frequency-info)])
 
+(rum/defc analysis-settings < rum/reactive [initial-symbols indicator-config-info]
+  [:> Stack {:direction "column" :spacing 0.5}
+   (symbol-list (:symbols (rum/react component-state))
+                #(swap! component-state assoc :symbols %)
+                true
+                (:enabled-symbols (rum/react component-state))
+                #(swap! component-state assoc :enabled-symbols %))
+   [:> Button {:variant  "contained"
+               :disabled (= initial-symbols (:symbols (rum/react component-state)))
+               :onClick  #(swap! component-state assoc
+                                 :symbols initial-symbols
+                                 :enabled-symbols initial-symbols)}
+    "Reset from settings"]])
+
 (rum/defc analysis-app < rum/reactive [initial-symbols period-frequency-info indicator-config-info]
   (when (empty? (:symbols @component-state))
     (swap! component-state assoc :symbols initial-symbols :enabled-symbols initial-symbols))
   [:div.wrapper
    [:div.side-bar
-    (symbol-list (:symbols (rum/react component-state))
-                 #(swap! component-state assoc :symbols %)
-                 true
-                 (:enabled-symbols (rum/react component-state))
-                 #(swap! component-state assoc :enabled-symbols %))]
+    (analysis-settings initial-symbols indicator-config-info)]
    [:div.main-view
     [:> Stack {:direction "row" :spacing 1}
      (price-chart (:chart-data (rum/react component-state)))
