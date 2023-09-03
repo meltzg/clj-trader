@@ -27,17 +27,18 @@
 
 (def CanvasJSChart (.-CanvasJSChart CanvasJSReact))
 
-(def component-state (atom {:use-start-date false
-                            :use-end-date   false
-                            :period-type    :day
-                            :periods        1
-                            :frequency-type :minute
-                            :frequency      1
-                            :start-date     (utils/yesterday)
-                            :end-date       (js/Date.)
-                            :chart-data     []
-                            :table-data     []
-                            :symbols        []}))
+(def component-state (atom {:use-start-date  false
+                            :use-end-date    false
+                            :period-type     :day
+                            :periods         1
+                            :frequency-type  :minute
+                            :frequency       1
+                            :start-date      (utils/yesterday)
+                            :end-date        (js/Date.)
+                            :chart-data      []
+                            :table-data      []
+                            :symbols         []
+                            :enabled-symbols []}))
 
 (defn price-history->chart-data [{:keys [symbol price-candles]}]
   {:type               "candlestick"
@@ -65,7 +66,7 @@
                                    :periods        (:periods @component-state)
                                    :frequency-type (:frequency-type @component-state)
                                    :frequency      (:frequency @component-state)
-                                   :symbols (:symbols @component-state)}
+                                   :symbols        (:enabled-symbols @component-state)}
                                   (conj (when (:use-start-date @component-state)
                                           [:start-date (.getTime (:start-date @component-state))]))
                                   (conj (when (:use-end-date @component-state)
@@ -184,11 +185,14 @@
 
 (rum/defc analysis-app < rum/reactive [initial-symbols period-frequency-info indicator-config-info]
   (when (empty? (:symbols @component-state))
-    (swap! component-state assoc :symbols initial-symbols))
+    (swap! component-state assoc :symbols initial-symbols :enabled-symbols initial-symbols))
   [:div.wrapper
    [:div.side-bar
     (symbol-list (:symbols (rum/react component-state))
-                 #(swap! component-state assoc :symbols %))]
+                 #(swap! component-state assoc :symbols %)
+                 true
+                 (:enabled-symbols (rum/react component-state))
+                 #(swap! component-state assoc :enabled-symbols %))]
    [:div.main-view
     [:> Stack {:direction "row" :spacing 1}
      (price-chart (:chart-data (rum/react component-state)))
