@@ -1,4 +1,4 @@
-{:symbols                  []
+{:tickers                  []
  :end-of-day-exit          false
  :enable-automated-trading false
  :trading-freq-seconds     5

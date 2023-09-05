@@ -1,8 +1,8 @@
 (ns clj-trader.core
   (:require
     [ajax.core :as ajax]
-    [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
     [clj-trader.apps.analysis :refer [analysis-app]]
+    [clj-trader.apps.auth :refer [authenticator, handle-refresh]]
     [clj-trader.apps.user-settings :refer [settings-panel]]
     [clj-trader.utils :refer [api-url]]
     [goog.dom :as gdom]
@@ -125,12 +125,12 @@
       (map #(apply render-list-item %) [["Analysis" AnalyticsIcon :analysis]
                                         ["Auto-Trader" SettingsIcon :auto-trader]])]]
     [:> Box {:component "main"
-             :sx {:display (app-visibility :analysis (:open-app (rum/react app-state)))}}
-     (analysis-app (-> (rum/react app-state) :user-settings :symbols)
+             :sx        {:display (app-visibility :analysis (:open-app (rum/react app-state)))}}
+     (analysis-app (-> (rum/react app-state) :user-settings :tickers)
                    (:period-frequency-info (rum/react app-state))
                    (:indicator-config-info (rum/react app-state)))]
     [:> Box {:component "main"
-             :sx {:display (app-visibility :auto-trader (:open-app (rum/react app-state)))}}
+             :sx        {:display (app-visibility :auto-trader (:open-app (rum/react app-state)))}}
      (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)]]])
 
 (defn mount [el]

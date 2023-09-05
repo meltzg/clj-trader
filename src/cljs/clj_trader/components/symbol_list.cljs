@@ -11,35 +11,35 @@
                                      TextField]]
             [rum.core :as rum]))
 
-(defn handle-add-symbol [symbols on-change event]
+(defn handle-add-ticker [tickers on-change event]
   (when (= "Enter" (.-key event))
-    (let [new-symbol (upper-case (.. event -target -value))]
-      (on-change (-> symbols
-                     (conj new-symbol)
+    (let [new-ticker (upper-case (.. event -target -value))]
+      (on-change (-> tickers
+                     (conj new-ticker)
                      set
                      sort))
       (set! (.. event -target -value) ""))))
 
-(defn render-symbol-item [symbols on-change toggleable enabled-symbols on-enable-change symbol]
-  [:> ListItem {:key     symbol
+(defn render-symbol-item [tickers on-change toggleable enabled-tickers on-enable-change ticker]
+  [:> ListItem {:key     ticker
                 :divider true}
-   [:> ListItemText {:primary symbol}]
+   [:> ListItemText {:primary ticker}]
    [:> ListItemIcon
     [:> Switch {:disabled (not toggleable)
-                :checked (some? (some #{symbol} enabled-symbols))
+                :checked  (some? (some #{ticker} enabled-tickers))
                 :onChange #(on-enable-change (if (.. % -target -checked)
-                                               (conj enabled-symbols symbol)
-                                               (remove #{symbol} enabled-symbols)))}]
+                                               (conj enabled-tickers ticker)
+                                               (remove #{ticker} enabled-tickers)))}]
     [:> IconButton {:color   "error"
-                    :onClick #(on-change (->> symbols
-                                              (remove #{symbol})
+                    :onClick #(on-change (->> tickers
+                                              (remove #{ticker})
                                               set
                                               sort))}
      [:> DeleteIcon]]]])
 
-(rum/defc symbol-list [symbols on-change toggleable enabled-symbols on-enable-change]
+(rum/defc symbol-list [tickers on-change toggleable enabled-tickers on-enable-change]
   [:> Stack {:direction "column"}
-   [:> TextField {:label     "Add New Symbol"
-                  :onKeyDown (partial handle-add-symbol symbols on-change)}]
+   [:> TextField {:label     "Add New ticker"
+                  :onKeyDown (partial handle-add-ticker tickers on-change)}]
    [:> List
-    (map (partial render-symbol-item symbols on-change toggleable enabled-symbols on-enable-change) symbols)]])
+    (map (partial render-symbol-item tickers on-change toggleable enabled-tickers on-enable-change) tickers)]])

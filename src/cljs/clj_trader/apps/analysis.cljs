@@ -4,9 +4,12 @@
             [clj-trader.components.symbol-list :refer [symbol-list]]
             [clj-trader.utils :as utils :refer [api-url]]
             ["@canvasjs/react-charts$default" :as CanvasJSReact]
+            ["@mui/icons-material/Add$default" :as AddIcon]
             ["@mui/material" :refer [Box
                                      Button
+                                     Divider
                                      Drawer
+                                     Fab
                                      FormControl
                                      FormControlLabel
                                      InputLabel
@@ -20,7 +23,8 @@
                                      TableRow
                                      TableHead
                                      TableCell
-                                     TableBody]]
+                                     TableBody
+                                     Typography]]
             [goog.string :as gstring]
             [goog.string.format]
             [rum.core :as rum]))
@@ -37,13 +41,13 @@
                             :end-date        (js/Date.)
                             :chart-data      []
                             :table-data      []
-                            :symbols         []
-                            :enabled-symbols []}))
+                            :tickers         []
+                            :enabled-tickers []}))
 
-(defn price-history->chart-data [{:keys [symbol price-candles]}]
+(defn price-history->chart-data [{:keys [ticker price-candles]}]
   {:type               "candlestick"
    :showInLegend       true
-   :name               symbol
+   :name               ticker
    :yValueFormatString "$###0.00"
    :dataPoints         (mapv (fn [candle]
                                {:x (js/Date. (:datetime candle))
@@ -53,9 +57,9 @@
                                     (:close candle)]})
                              price-candles)})
 
-(defn price-history->table-data [{:keys [symbol stats]}]
+(defn price-history->table-data [{:keys [ticker stats]}]
   (prn "STATS" stats)
-  (assoc stats :symbol symbol))
+  (assoc stats :ticker ticker))
 
 (defn refresh-data []
   (ajax/GET (str api-url "priceHistory")
@@ -66,7 +70,7 @@
                                    :periods        (:periods @component-state)
                                    :frequency-type (:frequency-type @component-state)
                                    :frequency      (:frequency @component-state)
-                                   :symbols        (:enabled-symbols @component-state)}
+                                   :tickers        (:enabled-tickers @component-state)}
                                   (conj (when (:use-start-date @component-state)
                                           [:start-date (.getTime (:start-date @component-state))]))
                                   (conj (when (:use-end-date @component-state)
@@ -105,12 +109,12 @@
       (concat [[:> TableCell "Symbol"]]
               (map (fn [column] [:> TableCell {:align "right" :key column}
                                  (name column)])
-                   (->> stats-data first keys (remove #{:symbol}) sort)))]]
+                   (->> stats-data first keys (remove #{:ticker}) sort)))]]
     [:> TableBody
-     (map (fn [row] [:> TableRow {:key (:symbol row)}
-                     (concat [[:> TableCell (:symbol row)]]
+     (map (fn [row] [:> TableRow {:key (:ticker row)}
+                     (concat [[:> TableCell (:ticker row)]]
                              (map (fn [key] [:> TableCell {:align "right"} (gstring/format "%.2f" (key row))])
-                                  (->> stats-data first keys (remove #{:symbol}) sort)))])
+                                  (->> stats-data first keys (remove #{:ticker}) sort)))])
           stats-data)]]])
 
 (rum/defc form-selector [{:keys [value label on-change items item-renderer]}]
@@ -183,26 +187,33 @@
    (start-end-control)
    (frequency-period-control period-frequency-info)])
 
-(rum/defc analysis-settings < rum/reactive [initial-symbols indicator-config-info]
+(rum/defc analysis-settings < rum/reactive [initial-tickers indicator-config-info]
   [:> Stack {:direction "column" :spacing 0.5}
-   (symbol-list (:symbols (rum/react component-state))
-                #(swap! component-state assoc :symbols %)
+   [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
+    "Symbols"]
+   (symbol-list (:tickers (rum/react component-state))
+                #(swap! component-state assoc :tickers %)
                 true
-                (:enabled-symbols (rum/react component-state))
-                #(swap! component-state assoc :enabled-symbols %))
+                (:enabled-tickers (rum/react component-state))
+                #(swap! component-state assoc :enabled-tickers %))
    [:> Button {:variant  "contained"
-               :disabled (= initial-symbols (:symbols (rum/react component-state)))
+               :disabled (= initial-tickers (:tickers (rum/react component-state)))
                :onClick  #(swap! component-state assoc
-                                 :symbols initial-symbols
-                                 :enabled-symbols initial-symbols)}
-    "Reset from settings"]])
+                                 :tickers initial-tickers
+                                 :enabled-tickers initial-tickers)}
+    "Reset from settings"]
+   [:> Divider {}]
+   [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
+    "Indicators"]
+   [:> Fab {:color "primary" :size "small"}
+    [:> AddIcon {}]]])
 
-(rum/defc analysis-app < rum/reactive [initial-symbols period-frequency-info indicator-config-info]
-  (when (empty? (:symbols @component-state))
-    (swap! component-state assoc :symbols initial-symbols :enabled-symbols initial-symbols))
+(rum/defc analysis-app < rum/reactive [initial-tickers period-frequency-info indicator-config-info]
+  (when (empty? (:tickers @component-state))
+    (swap! component-state assoc :tickers initial-tickers :enabled-tickers initial-tickers))
   [:div.wrapper
    [:div.side-bar
-    (analysis-settings initial-symbols indicator-config-info)]
+    (analysis-settings initial-tickers indicator-config-info)]
    [:div.main-view
     [:> Stack {:direction "row" :spacing 1}
      (price-chart (:chart-data (rum/react component-state)))

@@ -66,8 +66,8 @@
                                       :position-size) "")}]
    (symbol-list (-> (rum/react component-state)
                     :settings
-                    :symbols)
-                #(swap! component-state assoc-in [:settings :symbols] %))
+                    :tickers)
+                #(swap! component-state assoc-in [:settings :tickers] %))
    [:> Stack {:direction "row"
               :spacing   1}
     [:> Button {:variant  "contained"
