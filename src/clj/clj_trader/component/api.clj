@@ -3,6 +3,7 @@
             [clj-trader.algo.indicators :as indicators]
             [clj-trader.component.config :as config]
             [clj-trader.component.td-brokerage :as td]
+            [clj-trader.utils.values :refer [frequency-types period-types]]
             [com.stuartsierra.component :as component]
             [compojure.core :refer :all]
             [compojure.route :as route]
@@ -75,7 +76,9 @@
                                                 :user-settings
                                                 deref))))
     (GET "/api/priceHistory" {params :params} (price-history-handler config td-brokerage params))
-    (GET "/api/periodFrequencyInfo" [] (fn [_] (response td/period-frequency-info)))
+    (GET "/api/periodFrequencyInfo" [] (fn [_] (response (assoc td/period-frequency-info
+                                                           :period-types period-types
+                                                           :frequency-types frequency-types))))
     (GET "/api/indicatorConfigInfo" [] (fn [_] (response indicators/config-map)))
     (route/resources "/")
     (route/not-found "Not Found")))

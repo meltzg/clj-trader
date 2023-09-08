@@ -12,15 +12,7 @@
 (def api-root "https://api.tdameritrade.com/v1")
 (def secrets-file "td-secrets.jks")
 
-(def period-frequency-info {:period-types                    [:day
-                                                              :month
-                                                              :year
-                                                              :ytd]
-                            :frequency-types                 [:minute
-                                                              :daily
-                                                              :weekly
-                                                              :monthly]
-                            :valid-periods                   {:day   [1 2 3 4 5 10]
+(def period-frequency-info {:valid-periods                   {:day   [1 2 3 4 5 10]
                                                               :month [1 2 3 6]
                                                               :year  [1 2 3 5 10 15 20]
                                                               :ytd   [1]}

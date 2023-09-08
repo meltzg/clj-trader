@@ -1,11 +1,16 @@
 (ns clj-trader.algo.indicators
+  (:require [clj-trader.utils.values :refer [frequency-types]])
   (:import (java.lang Math)))
 
 (def config-map {:sma       {:name "Simple Moving Average"
-                             :opts {:periods {:type :int
-                                              :min  1}}}
+                             :opts {:window-type {:type :choice
+                                                  :opts frequency-types}
+                                    :window-size {:type :int
+                                                  :min  1}}}
                  :bollinger {:name "Bollinger Bands"
-                             :opts {:periods      {:type :int
+                             :opts {:window-type  {:type :choice
+                                                   :opts frequency-types}
+                                    :window-size  {:type :int
                                                    :min  1}
                                     :num-std-devs {:type :int
                                                    :min  1}}}})
