@@ -6,9 +6,13 @@
                                      AccordionDetails
                                      AccordionSummary
                                      Fab
+                                     FormControl
+                                     InputLabel
                                      Menu
                                      MenuItem
+                                     Select
                                      Stack
+                                     TextField
                                      Typography]]))
 
 (def component-state (atom {}))
@@ -25,17 +29,34 @@
          [:indicators (keyword (gensym (name indicator-key)))]
          {:opts indicator-options}))
 
-(rum/defc indicator-config [config indicator-info on-change]
+(defmulti option-control #(-> %2 :type keyword))
+
+(defmethod option-control :choice [opt-key {:keys [display-name opts]}]
+  [:> FormControl {:fullWidth true}
+   [:> InputLabel display-name]
+   [:> Select {:label display-name}
+    (map (fn [option]
+           [:> MenuItem {:key option :value (name option)}
+            (name option)])
+         opts)]])
+
+(defmethod option-control :int [opt-key {:keys [display-name min max]}]
+  [:> TextField {:label display-name
+                 :type  "number"}])
+
+(rum/defc indicator-config [indicator-key indicator-info on-change]
+  (prn "key" indicator-key)
+  (prn "opts" (:opts indicator-info))
   [:> Accordion
    [:> AccordionSummary {:expandIcon (rum/adapt-class ExpandMoreIcon {})}
     [:> Typography (:name indicator-info)]]
-   [:> AccordionDetails
-    [:> Typography config]]])
+   [:> AccordionDetails {}
+    (map #(apply option-control %) (:opts indicator-info))]])
 
 (rum/defc indicator-list < rum/reactive [indicator-configs indicator-config-info on-change]
   [:> Stack {:direction "column"}
-   (map (fn [[_ indicator]]
-          (indicator-config (:config indicator) (:opts indicator) #())) indicator-configs)
+   (map (fn [[indicator-key indicator]]
+          (indicator-config indicator-key (:opts indicator) #())) indicator-configs)
    [:> Fab {:color         "primary"
             :size          "small"
             :id            "add-indicator"

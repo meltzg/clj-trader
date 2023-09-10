@@ -4,15 +4,20 @@
 
 (def config-map {:sma       {:name "Simple Moving Average"
                              :opts {:window-type {:type :choice
+                                                  :display-name "Window type"
                                                   :opts frequency-types}
                                     :window-size {:type :int
+                                                  :display-name "Window size"
                                                   :min  1}}}
                  :bollinger {:name "Bollinger Bands"
                              :opts {:window-type  {:type :choice
+                                                   :display-name "Window type"
                                                    :opts frequency-types}
                                     :window-size  {:type :int
+                                                   :display-name "Window size"
                                                    :min  1}
                                     :num-std-devs {:type :int
+                                                   :display-name "Std deviations"
                                                    :min  1}}}})
 
 (defn average [col]

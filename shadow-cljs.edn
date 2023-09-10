@@ -7,5 +7,5 @@
                 :devtools   {;; before live-reloading any code call this function
                              :before-load shadow-cljs-test.core/stop
                              ;; after live-reloading finishes call this function
-                             :after-load  shadow-cljs-test.core/start}}}
+                             :after-load  clj-trader.core/on-reload}}}
  }
