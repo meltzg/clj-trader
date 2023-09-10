@@ -1,20 +1,17 @@
 (ns clj-trader.apps.analysis
   (:require [ajax.core :as ajax]
             [clj-trader.components.date-selector :refer [date-selector]]
-            [clj-trader.components.indicator :refer [indicator-config]]
+            [clj-trader.components.indicator-list :refer [indicator-list]]
             [clj-trader.components.symbol-list :refer [symbol-list]]
             [clj-trader.utils :as utils :refer [api-url]]
             ["@canvasjs/react-charts$default" :as CanvasJSReact]
-            ["@mui/icons-material/Add$default" :as AddIcon]
             ["@mui/material" :refer [Box
                                      Button
                                      Divider
                                      Drawer
-                                     Fab
                                      FormControl
                                      FormControlLabel
                                      InputLabel
-                                     Menu
                                      MenuItem
                                      Select
                                      Stack
@@ -85,21 +82,14 @@
                                        :table-data
                                        (mapv price-history->table-data price-histories)))}))
 
-(defn- handle-legend-click [e]
+(defn handle-legend-click [e]
   (if (or (nil? (.. e -dataSeries -visible))
           (true? (.. e -dataSeries -visible)))
     (set! (.. e -dataSeries -visible) false)
     (set! (.. e -dataSeries -visible) true))
   (.render (.-chart e)))
 
-(defn handle-indicator-menu [event]
-  (swap! component-state assoc :anchor-element (.-currentTarget event)))
-
-(defn handle-indicator-close []
-  (swap! component-state dissoc :anchor-element))
-
-(defn add-indicator [indicator-key indicator-options]
-  (handle-indicator-close)
+(defn handle-add-indicator [indicator-key indicator-options]
   (swap! component-state assoc-in
          [:indicators (keyword (gensym (name indicator-key)))]
          {:opts indicator-options}))
@@ -219,24 +209,8 @@
    [:> Divider {}]
    [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
     "Indicators"]
-   (map (fn [[_ indicator]]
-          (indicator-config (:config indicator) (:opts indicator) #())) (:indicators (rum/react component-state)))
-   [:> Fab {:color         "primary"
-            :size          "small"
-            :id            "add-indicator"
-            :aria-controls (when (:anchor-element (rum/react component-state)) "indicator-menu")
-            :aria-haspopup "true"
-            :aria-expanded (when (:anchor-element (rum/react component-state)) "true")
-            :onClick       handle-indicator-menu}
-    [:> AddIcon {}]]
-   [:> Menu {:id            "indicator-menu"
-             :anchorEl      (:anchor-element (rum/react component-state))
-             :open          (some? (:anchor-element (rum/react component-state)))
-             :onClose       handle-indicator-close
-             :MenuListProps {:aria-labelledby "add-indicator"}}
-    (map (fn [[indicator-key indicator-options]]
-           [:> MenuItem {:onClick #(add-indicator indicator-key indicator-options)}
-            (:name indicator-options)]) indicator-config-info)]])
+   (indicator-list (:indicators (rum/react component-state)) indicator-config-info handle-add-indicator)
+   ])
 
 (rum/defc analysis-app < rum/reactive [initial-tickers period-frequency-info indicator-config-info]
   (when (empty? (:tickers @component-state))
