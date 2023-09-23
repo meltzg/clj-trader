@@ -1,12 +1,15 @@
 (ns clj-trader.components.indicator-list
   (:require [rum.core :as rum]
             ["@mui/icons-material/Add$default" :as AddIcon]
+            ["@mui/icons-material/Delete$default" :as DeleteIcon]
             ["@mui/icons-material/ExpandMore$default" :as ExpandMoreIcon]
             ["@mui/material" :refer [Accordion
+                                     AccordionActions
                                      AccordionDetails
                                      AccordionSummary
                                      Fab
                                      FormControl
+                                     IconButton
                                      InputLabel
                                      Menu
                                      MenuItem
@@ -38,19 +41,21 @@
   [:> TextField {:label display-name
                  :type  "number"}])
 
-(rum/defc indicator-config [indicator-key indicator-info on-change]
-  (prn "key" indicator-key)
-  (prn "opts" (:opts indicator-info))
+(rum/defc indicator-config [indicator-key indicator-info on-change on-delete]
   [:> Accordion
    [:> AccordionSummary {:expandIcon (rum/adapt-class ExpandMoreIcon {})}
     [:> Typography (:name indicator-info)]]
    [:> AccordionDetails {}
-    (map #(apply option-control %) (:opts indicator-info))]])
+    (map #(apply option-control %) (:opts indicator-info))]
+   [:> AccordionActions
+    [:> IconButton {:color   "error"
+                    :onClick #(on-delete indicator-key)}
+     [:> DeleteIcon {}]]]])
 
-(rum/defc indicator-list < rum/reactive [indicator-configs indicator-config-info on-add]
+(rum/defc indicator-list < rum/reactive [indicator-configs indicator-config-info on-add on-delete]
   [:> Stack {:direction "column"}
    (map (fn [[indicator-key indicator]]
-          (indicator-config indicator-key (:opts indicator) #())) indicator-configs)
+          (indicator-config indicator-key indicator #() on-delete)) indicator-configs)
    [:> Fab {:color         "primary"
             :size          "small"
             :id            "add-indicator"

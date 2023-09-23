@@ -89,9 +89,15 @@
   (.render (.-chart e)))
 
 (defn handle-add-indicator [indicator-key indicator-options]
-  (swap! component-state assoc-in
-         [:indicators (keyword (str (name indicator-key) "-" (.randomUUID js/crypto)))]
-         {:opts indicator-options}))
+  (let [indicator-key (if (some #{indicator-key} (keys (:indicator-config-info @component-state)))
+                        (keyword (str (name indicator-key) "/" (.randomUUID js/crypto)))
+                        indicator-key)]
+    (swap! component-state assoc-in
+           [:indicators indicator-key]
+           indicator-options)))
+
+(defn handle-delete-indicator [indicator-key]
+  (swap! component-state update :indicators dissoc indicator-key))
 
 (rum/defc price-chart [chart-data]
   [:> CanvasJSChart {:options {:title            {:text "Price History"}
@@ -191,6 +197,7 @@
    (frequency-period-control period-frequency-info)])
 
 (rum/defc analysis-settings < rum/reactive [initial-tickers indicator-config-info]
+  (swap! component-state assoc :indicator-config-info indicator-config-info)
   [:> Stack {:direction "column" :spacing 0.5}
    [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
     "Symbols"]
@@ -208,8 +215,11 @@
    [:> Divider {}]
    [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
     "Indicators"]
-   (indicator-list (:indicators (rum/react component-state)) indicator-config-info handle-add-indicator)
-   ])
+   (indicator-list
+     (:indicators (rum/react component-state))
+     indicator-config-info
+     handle-add-indicator
+     handle-delete-indicator)])
 
 (rum/defc analysis-app < rum/reactive [initial-tickers period-frequency-info indicator-config-info]
   (when (empty? (:tickers @component-state))
