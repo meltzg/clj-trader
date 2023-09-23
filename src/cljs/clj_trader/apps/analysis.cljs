@@ -129,7 +129,7 @@
              :alignItems "center"
              :spacing    1
              :paddingTop 1}
-   (form-selector {:value         (name (:period-type (rum/react component-state)))
+   (form-selector {:value         (:period-type (rum/react component-state))
                    :label         "Period Type"
                    :on-change     #(swap! component-state assoc :period-type (keyword (.. % -target -value)))
                    :items         (:period-types period-frequency-info)})
@@ -137,7 +137,7 @@
                    :label         "# Periods"
                    :on-change     #(swap! component-state assoc :periods (.. % -target -value))
                    :items         ((:period-type (rum/react component-state)) (:valid-periods period-frequency-info))})
-   (form-selector {:value         (name (:frequency-type (rum/react component-state)))
+   (form-selector {:value         (:frequency-type (rum/react component-state))
                    :label         "Frequency Type"
                    :on-change     #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))
                    :items         ((:period-type (rum/react component-state)) (:valid-frequency-type-for-period period-frequency-info))})
