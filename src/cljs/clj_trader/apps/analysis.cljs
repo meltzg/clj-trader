@@ -92,7 +92,8 @@
                         indicator-key)]
     (swap! component-state assoc-in
            [:indicators indicator-key]
-           indicator-options)))
+           indicator-options)
+    (prn (cljs.pprint.pprint (:indicators @component-state)))))
 
 (defn handle-delete-indicator [indicator-key]
   (swap! component-state update :indicators dissoc indicator-key))
@@ -129,22 +130,22 @@
              :alignItems "center"
              :spacing    1
              :paddingTop 1}
-   (form-selector {:value         (:period-type (rum/react component-state))
-                   :label         "Period Type"
-                   :on-change     #(swap! component-state assoc :period-type (keyword (.. % -target -value)))
-                   :items         (:period-types period-frequency-info)})
-   (form-selector {:value         (:periods (rum/react component-state))
-                   :label         "# Periods"
-                   :on-change     #(swap! component-state assoc :periods (.. % -target -value))
-                   :items         ((:period-type (rum/react component-state)) (:valid-periods period-frequency-info))})
-   (form-selector {:value         (:frequency-type (rum/react component-state))
-                   :label         "Frequency Type"
-                   :on-change     #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))
-                   :items         ((:period-type (rum/react component-state)) (:valid-frequency-type-for-period period-frequency-info))})
-   (form-selector {:value         (:frequency (rum/react component-state))
-                   :label         "Frequency"
-                   :on-change     #(swap! component-state assoc :frequency (.. % -target -value))
-                   :items         ((:frequency-type (rum/react component-state)) (:valid-frequencies period-frequency-info))})])
+   (form-selector {:value     (:period-type (rum/react component-state))
+                   :label     "Period Type"
+                   :on-change #(swap! component-state assoc :period-type (keyword (.. % -target -value)))
+                   :items     (:period-types period-frequency-info)})
+   (form-selector {:value     (:periods (rum/react component-state))
+                   :label     "# Periods"
+                   :on-change #(swap! component-state assoc :periods (.. % -target -value))
+                   :items     ((:period-type (rum/react component-state)) (:valid-periods period-frequency-info))})
+   (form-selector {:value     (:frequency-type (rum/react component-state))
+                   :label     "Frequency Type"
+                   :on-change #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))
+                   :items     ((:period-type (rum/react component-state)) (:valid-frequency-type-for-period period-frequency-info))})
+   (form-selector {:value     (:frequency (rum/react component-state))
+                   :label     "Frequency"
+                   :on-change #(swap! component-state assoc :frequency (.. % -target -value))
+                   :items     ((:frequency-type (rum/react component-state)) (:valid-frequencies period-frequency-info))})])
 
 (rum/defc start-end-control < rum/reactive []
   [:> Stack {:direction "column" :spacing 0.5}
