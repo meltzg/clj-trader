@@ -1,5 +1,6 @@
 (ns clj-trader.components.indicator-list
-  (:require [rum.core :as rum]
+  (:require [clj-trader.components.inputs :refer [form-selector]]
+            [rum.core :as rum]
             ["@mui/icons-material/Add$default" :as AddIcon]
             ["@mui/icons-material/Delete$default" :as DeleteIcon]
             ["@mui/icons-material/ExpandMore$default" :as ExpandMoreIcon]
@@ -7,6 +8,7 @@
                                      AccordionActions
                                      AccordionDetails
                                      AccordionSummary
+                                     Button
                                      Fab
                                      FormControl
                                      IconButton
@@ -26,18 +28,20 @@
 (defn handle-indicator-close []
   (swap! component-state dissoc :anchor-element))
 
-(defmulti option-control #(-> %2 :type keyword))
+(defmulti option-control #(-> %3 :type keyword))
 
-(defmethod option-control :choice [opt-key {:keys [display-name opts]}]
+(defmethod option-control :choice [on-change opt-key {:keys [display-name opts value] :as config}]
   [:> FormControl {:fullWidth true}
    [:> InputLabel display-name]
-   [:> Select {:label display-name}
+   [:> Select {:label display-name
+               :value value
+               :onChange #(on-change opt-key (assoc config :value (.. % -target -value)))}
     (map (fn [option]
            [:> MenuItem {:key option :value (name option)}
             (name option)])
          opts)]])
 
-(defmethod option-control :int [opt-key {:keys [display-name min max]}]
+(defmethod option-control :int [on-change opt-key {:keys [display-name min max value] :as config}]
   [:> TextField {:label display-name
                  :type  "number"}])
 
@@ -48,6 +52,8 @@
    [:> AccordionDetails {}
     (map #(apply option-control %) (:opts indicator-info))]
    [:> AccordionActions
+    [:> Button {:variant "contained"} "Save"]
+    [:> Button {:variant "contained"} "Reset"]
     [:> IconButton {:color   "error"
                     :onClick #(on-delete indicator-key)}
      [:> DeleteIcon {}]]]])

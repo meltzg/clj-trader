@@ -2,6 +2,7 @@
   (:require [ajax.core :as ajax]
             [clj-trader.components.date-selector :refer [date-selector]]
             [clj-trader.components.indicator-list :refer [indicator-list]]
+            [clj-trader.components.inputs :refer [form-selector]]
             [clj-trader.components.symbol-list :refer [symbol-list]]
             [clj-trader.utils :as utils :refer [api-url]]
             ["@canvasjs/react-charts$default" :as CanvasJSReact]
@@ -11,9 +12,6 @@
                                      Drawer
                                      FormControl
                                      FormControlLabel
-                                     InputLabel
-                                     MenuItem
-                                     Select
                                      Stack
                                      Switch
                                      TableContainer
@@ -126,14 +124,6 @@
                                   (->> stats-data first keys (remove #{:ticker}) sort)))])
           stats-data)]]])
 
-(rum/defc form-selector [{:keys [value label on-change items item-renderer]}]
-  [:> FormControl {:sx {:m 1 :minWidth 180}}
-   [:> InputLabel label]
-   [:> Select {:value    value
-               :label    label
-               :onChange on-change}
-    (map item-renderer items)]])
-
 (rum/defc frequency-period-control < rum/reactive [period-frequency-info]
   [:> Stack {:direction  "row"
              :alignItems "center"
@@ -142,31 +132,19 @@
    (form-selector {:value         (name (:period-type (rum/react component-state)))
                    :label         "Period Type"
                    :on-change     #(swap! component-state assoc :period-type (keyword (.. % -target -value)))
-                   :items         (:period-types period-frequency-info)
-                   :item-renderer (fn [period-type]
-                                    [:> MenuItem {:key period-type :value (name period-type)}
-                                     (name period-type)])})
+                   :items         (:period-types period-frequency-info)})
    (form-selector {:value         (:periods (rum/react component-state))
                    :label         "# Periods"
                    :on-change     #(swap! component-state assoc :periods (.. % -target -value))
-                   :items         ((:period-type (rum/react component-state)) (:valid-periods period-frequency-info))
-                   :item-renderer (fn [periods]
-                                    [:> MenuItem {:key periods :value periods}
-                                     periods])})
+                   :items         ((:period-type (rum/react component-state)) (:valid-periods period-frequency-info))})
    (form-selector {:value         (name (:frequency-type (rum/react component-state)))
                    :label         "Frequency Type"
                    :on-change     #(swap! component-state assoc :frequency-type (keyword (.. % -target -value)))
-                   :items         ((:period-type (rum/react component-state)) (:valid-frequency-type-for-period period-frequency-info))
-                   :item-renderer (fn [frequency-type]
-                                    [:> MenuItem {:key frequency-type :value (name frequency-type)}
-                                     (name frequency-type)])})
+                   :items         ((:period-type (rum/react component-state)) (:valid-frequency-type-for-period period-frequency-info))})
    (form-selector {:value         (:frequency (rum/react component-state))
                    :label         "Frequency"
                    :on-change     #(swap! component-state assoc :frequency (.. % -target -value))
-                   :items         ((:frequency-type (rum/react component-state)) (:valid-frequencies period-frequency-info))
-                   :item-renderer (fn [frequency]
-                                    [:> MenuItem {:key frequency :value frequency}
-                                     frequency])})])
+                   :items         ((:frequency-type (rum/react component-state)) (:valid-frequencies period-frequency-info))})])
 
 (rum/defc start-end-control < rum/reactive []
   [:> Stack {:direction "column" :spacing 0.5}
