@@ -23,12 +23,6 @@
 (defn handle-indicator-close []
   (swap! component-state dissoc :anchor-element))
 
-(defn add-indicator [indicator-key indicator-options]
-  (handle-indicator-close)
-  (swap! component-state assoc-in
-         [:indicators (keyword (gensym (name indicator-key)))]
-         {:opts indicator-options}))
-
 (defmulti option-control #(-> %2 :type keyword))
 
 (defmethod option-control :choice [opt-key {:keys [display-name opts]}]
@@ -53,7 +47,7 @@
    [:> AccordionDetails {}
     (map #(apply option-control %) (:opts indicator-info))]])
 
-(rum/defc indicator-list < rum/reactive [indicator-configs indicator-config-info on-change]
+(rum/defc indicator-list < rum/reactive [indicator-configs indicator-config-info on-add]
   [:> Stack {:direction "column"}
    (map (fn [[indicator-key indicator]]
           (indicator-config indicator-key (:opts indicator) #())) indicator-configs)
@@ -73,5 +67,5 @@
     (map (fn [[indicator-key indicator-options]]
            [:> MenuItem {:onClick (fn []
                                     (handle-indicator-close)
-                                    (on-change indicator-key indicator-options))}
+                                    (on-add indicator-key indicator-options))}
             (:name indicator-options)]) indicator-config-info)]])

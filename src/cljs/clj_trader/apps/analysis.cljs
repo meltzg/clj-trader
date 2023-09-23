@@ -90,7 +90,7 @@
 
 (defn handle-add-indicator [indicator-key indicator-options]
   (swap! component-state assoc-in
-         [:indicators (keyword (gensym (name indicator-key)))]
+         [:indicators (keyword (str (name indicator-key) "-" (.randomUUID js/crypto)))]
          {:opts indicator-options}))
 
 (rum/defc price-chart [chart-data]
