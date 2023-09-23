@@ -37,9 +37,12 @@
                                               sort))}
      [:> DeleteIcon]]]])
 
-(rum/defc symbol-list [tickers on-change toggleable enabled-tickers on-enable-change]
-  [:> Stack {:direction "column"}
-   [:> TextField {:label     "Add New ticker"
-                  :onKeyDown (partial handle-add-ticker tickers on-change)}]
-   [:> List
-    (map (partial render-symbol-item tickers on-change toggleable enabled-tickers on-enable-change) tickers)]])
+(rum/defc symbol-list
+  ([tickers on-change]
+   (symbol-list tickers on-change false nil nil))
+  ([tickers on-change toggleable enabled-tickers on-enable-change]
+   [:> Stack {:direction "column"}
+    [:> TextField {:label     "Add New ticker"
+                   :onKeyDown (partial handle-add-ticker tickers on-change)}]
+    [:> List
+     (map (partial render-symbol-item tickers on-change toggleable enabled-tickers on-enable-change) tickers)]]))
