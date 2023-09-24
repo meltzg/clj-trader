@@ -44,7 +44,7 @@
   {:init
    (fn [state]
      (ajax/GET (str api-url "userSettings")
-               {:response-format :json
+               {:response-format :transit
                 :keywords?       true?
                 :handler         (fn [body]
                                    (swap! app-state assoc :user-settings body))})
@@ -54,7 +54,7 @@
   {:init
    (fn [state]
      (ajax/GET (str api-url "periodFrequencyInfo")
-               {:response-format :json
+               {:response-format :transit
                 :keywords?       true?
                 :handler         (fn [body]
                                    (swap! app-state assoc :period-frequency-info body))})
@@ -64,9 +64,10 @@
   {:init
    (fn [state]
      (ajax/GET (str api-url "indicatorConfigInfo")
-               {:response-format :json
+               {:response-format :transit
                 :keywords?       true?
                 :handler         (fn [body]
+                                   (prn "indicatorConfigInfo" (cljs.pprint.pprint body))
                                    (swap! app-state assoc :indicator-config-info body))})
      state)})
 
@@ -148,8 +149,8 @@
                    (.get "code"))]
       (ajax/POST (str api-url "signIn")
                  {:params          {:code code}
-                  :format          :json
-                  :response-format :json
+                  :format          :transit
+                  :response-format :transit
                   :keywords?       true?
                   :handler         (fn [response]
                                      (prn response)

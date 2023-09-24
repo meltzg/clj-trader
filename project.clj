@@ -8,13 +8,13 @@
                  [compojure "1.7.0"]
                  [ring/ring-core "1.10.0"]
                  [ring/ring-jetty-adapter "1.10.0"]
-                 [ring/ring-json "0.5.1"]
                  [ring/ring-codec "1.2.0"]
                  [ring/ring-defaults "0.3.4"]
                  [com.stuartsierra/component "1.1.0"]
                  [clj-http "3.12.3"]
                  [clj-time "0.15.2"]
                  [cheshire "5.11.0"]
+                 [metosin/muuntaja "0.6.8"]
 
                  ;; CLJS Dependencies
                  ;[org.clojure/clojurescript "1.11.60"]

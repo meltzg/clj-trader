@@ -59,8 +59,8 @@
 
 (defn refresh-data []
   (ajax/GET (str api-url "priceHistory")
-            {:format          :edn
-             :response-format :json
+            {:format          :transit
+             :response-format :transit
              :keywords?       true
              :params          (-> {:period-type    (:period-type @component-state)
                                    :periods        (:periods @component-state)
@@ -90,8 +90,8 @@
   (ajax/PUT (str api-url "userSettings")
             {:params          settings
              :handler         on-change-settings
-             :format          :json
-             :response-format :json
+             :format          :transit
+             :response-format :transit
              :keywords?       true}))
 
 (defn handle-add-indicator [user-settings on-settings-change indicator-key indicator-options]

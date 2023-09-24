@@ -7,14 +7,14 @@
             [com.stuartsierra.component :as component]
             [compojure.core :refer :all]
             [compojure.route :as route]
+            [muuntaja.middleware :as mw]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.defaults :as defaults]
-            [ring.middleware.json :as json-mid]
             [ring.util.response :refer [resource-response response]]))
 
 (defn- sign-in-handler [config {:keys [td-brokerage]}]
-  (fn [{:keys [body]}]
-    (let [code (:code body)]
+  (fn [{:keys [body-params]}]
+    (let [code (:code body-params)]
       (response (-> (td/execute-command {:command      :sign-in
                                          :code         code
                                          :config       config
@@ -60,6 +60,13 @@
                                                           (select-keys params [:period-type :frequency-type])
                                                           keyword))}))))
 
+(defn- update-user-settings-handler [config]
+  (fn [{:keys [body-params]}]
+    (config/update-settings config body-params)
+    (response (-> config
+                  :user-settings
+                  deref))))
+
 (defn- app-routes [td-brokerage config]
   (routes
     (GET "/api/oauthUri" [] (fn [_] (response {:oauth-uri (get-in td-brokerage [:td-brokerage :oauth-uri])})))
@@ -70,11 +77,7 @@
     (GET "/api/userSettings" [] (fn [_] (response (-> config
                                                       :user-settings
                                                       deref))))
-    (PUT "/api/userSettings" [] (fn [{:keys [body]}]
-                                  (config/update-settings config body)
-                                  (response (-> config
-                                                :user-settings
-                                                deref))))
+    (PUT "/api/userSettings" [] (update-user-settings-handler config))
     (GET "/api/priceHistory" {params :params} (price-history-handler config td-brokerage params))
     (GET "/api/periodFrequencyInfo" [] (fn [_] (response (assoc td/period-frequency-info
                                                            :period-types period-types
@@ -91,8 +94,7 @@
       (println "Starting server on host" host " port: " port " ssl-port: " ssl-port)
       (assoc this :server (run-jetty
                             (-> (app-routes td-brokerage config)
-                                (json-mid/wrap-json-body {:key-fn keyword})
-                                json-mid/wrap-json-response
+                                mw/wrap-format
                                 (defaults/wrap-defaults {:params {:keywordize true
                                                                   :urlencoded true}}))
                             {:ssl?         true
