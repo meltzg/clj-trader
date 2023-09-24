@@ -45,7 +45,7 @@
    :showInLegend       true
    :name               ticker
    :yValueFormatString "$###0.00"
-   :dataPoints         (mapv (fn [candle]
+   :dataPoints         (map (fn [candle]
                                {:x (js/Date. (:datetime candle))
                                 :y [(:open candle)
                                     (:high candle)
@@ -75,9 +75,9 @@
                                 (swap! component-state
                                        assoc
                                        :chart-data
-                                       (mapv price-history->chart-data price-histories)
+                                       (map price-history->chart-data price-histories)
                                        :table-data
-                                       (mapv price-history->table-data price-histories)))}))
+                                       (map price-history->table-data price-histories)))}))
 
 (defn handle-legend-click [e]
   (if (or (nil? (.. e -dataSeries -visible))
