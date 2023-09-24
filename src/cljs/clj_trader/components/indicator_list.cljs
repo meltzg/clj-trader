@@ -33,7 +33,10 @@
 (defmethod option-control :choice [on-change opt-key {:keys [display-name opts value] :as config}]
   (form-selector {:value     value
                   :label     display-name
-                  :on-change #(on-change opt-key (assoc config :value (.. % -target -value)))
+                  :on-change #(let [target-val (if (every? keyword? opts)
+                                                 (keyword (.. % -target -value))
+                                                 (.. % -target -value))]
+                                (on-change opt-key (assoc config :value target-val)))
                   :items     opts}))
 
 (defmethod option-control :int [on-change opt-key {:keys [display-name min max value] :as config}]

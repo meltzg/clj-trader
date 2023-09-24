@@ -43,7 +43,7 @@
 
 (defn- calc-stat [price-candles keys stat-prefix f]
   (into {} (map (fn [key]
-                  [(str stat-prefix (name key))
+                  [(keyword (str stat-prefix (name key)))
                    (f price-candles key)])
                 keys)))
 

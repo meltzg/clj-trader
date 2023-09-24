@@ -66,9 +66,7 @@
      (ajax/GET (str api-url "indicatorConfigInfo")
                {:response-format :transit
                 :keywords?       true?
-                :handler         (fn [body]
-                                   (prn "indicatorConfigInfo" (cljs.pprint.pprint body))
-                                   (swap! app-state assoc :indicator-config-info body))})
+                :handler         #(swap! app-state assoc :indicator-config-info %)})
      state)})
 
 (defn toggle-drawer [event]

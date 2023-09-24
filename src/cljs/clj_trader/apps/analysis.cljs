@@ -100,8 +100,7 @@
                         indicator-key)]
     (handle-save-settings
       (assoc-in user-settings [:indicators indicator-key] indicator-options)
-      on-settings-change)
-    (prn (cljs.pprint.pprint (:indicators @component-state)))))
+      on-settings-change)))
 
 (defn handle-delete-indicator [user-settings on-settings-change indicator-key]
   (handle-save-settings
