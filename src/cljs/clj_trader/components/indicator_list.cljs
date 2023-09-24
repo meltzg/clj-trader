@@ -77,5 +77,5 @@
     (map (fn [[indicator-key indicator-options]]
            [:> MenuItem {:onClick (fn []
                                     (handle-indicator-close)
-                                    (on-add indicator-key indicator-options))}
+                                    (on-add indicator-key (assoc indicator-options :type indicator-key)))}
             (:name indicator-options)]) indicator-config-info)]])

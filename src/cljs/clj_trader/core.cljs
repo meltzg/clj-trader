@@ -126,9 +126,10 @@
                                         ["Auto-Trader" SettingsIcon :auto-trader]])]]
     [:> Box {:component "main"
              :sx        {:display (app-visibility :analysis (:open-app (rum/react app-state)))}}
-     (analysis-app (-> (rum/react app-state) :user-settings :tickers)
+     (analysis-app (:user-settings (rum/react app-state))
                    (:period-frequency-info (rum/react app-state))
-                   (:indicator-config-info (rum/react app-state)))]
+                   (:indicator-config-info (rum/react app-state))
+                   handle-user-settings-change)]
     [:> Box {:component "main"
              :sx        {:display (app-visibility :auto-trader (:open-app (rum/react app-state)))}}
      (settings-panel (:user-settings (rum/react app-state)) handle-user-settings-change)]]])

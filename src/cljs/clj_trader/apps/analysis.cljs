@@ -86,17 +86,27 @@
     (set! (.. e -dataSeries -visible) true))
   (.render (.-chart e)))
 
-(defn handle-add-indicator [indicator-key indicator-options]
+(defn handle-save-settings [settings on-change-settings]
+  (ajax/PUT (str api-url "userSettings")
+            {:params          settings
+             :handler         on-change-settings
+             :format          :json
+             :response-format :json
+             :keywords?       true}))
+
+(defn handle-add-indicator [user-settings on-settings-change indicator-key indicator-options]
   (let [indicator-key (if (some #{indicator-key} (keys (:indicator-config-info @component-state)))
-                        (keyword (str (name indicator-key) "/" (.randomUUID js/crypto)))
+                        (keyword (.randomUUID js/crypto))
                         indicator-key)]
-    (swap! component-state assoc-in
-           [:indicators indicator-key]
-           indicator-options)
+    (handle-save-settings
+      (assoc-in user-settings [:indicators indicator-key] indicator-options)
+      on-settings-change)
     (prn (cljs.pprint.pprint (:indicators @component-state)))))
 
-(defn handle-delete-indicator [indicator-key]
-  (swap! component-state update :indicators dissoc indicator-key))
+(defn handle-delete-indicator [user-settings on-settings-change indicator-key]
+  (handle-save-settings
+    (update user-settings :indicators dissoc indicator-key)
+    on-settings-change))
 
 (rum/defc price-chart [chart-data]
   [:> CanvasJSChart {:options {:title            {:text "Price History"}
@@ -175,7 +185,7 @@
    (start-end-control)
    (frequency-period-control period-frequency-info)])
 
-(rum/defc analysis-settings < rum/reactive [initial-tickers indicator-config-info]
+(rum/defc analysis-settings < rum/reactive [user-settings indicator-config-info on-settings-change]
   (swap! component-state assoc :indicator-config-info indicator-config-info)
   [:> Stack {:direction "column" :spacing 0.5}
    [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
@@ -186,26 +196,26 @@
                 (:enabled-tickers (rum/react component-state))
                 #(swap! component-state assoc :enabled-tickers %))
    [:> Button {:variant  "contained"
-               :disabled (= initial-tickers (:tickers (rum/react component-state)))
+               :disabled (= (:tickers user-settings) (:tickers (rum/react component-state)))
                :onClick  #(swap! component-state assoc
-                                 :tickers initial-tickers
-                                 :enabled-tickers initial-tickers)}
+                                 :tickers (:tickers user-settings)
+                                 :enabled-tickers (:tickers user-settings))}
     "Reset from settings"]
    [:> Divider {}]
    [:> Typography {:variant "h6" :component "div" :sx {:flexGrow 1}}
     "Indicators"]
    (indicator-list
-     (:indicators (rum/react component-state))
+     (:indicators user-settings)
      indicator-config-info
-     handle-add-indicator
-     handle-delete-indicator)])
+     (partial handle-add-indicator user-settings on-settings-change)
+     (partial handle-delete-indicator user-settings on-settings-change))])
 
-(rum/defc analysis-app < rum/reactive [initial-tickers period-frequency-info indicator-config-info]
+(rum/defc analysis-app < rum/reactive [user-settings period-frequency-info indicator-config-info on-settings-change]
   (when (empty? (:tickers @component-state))
-    (swap! component-state assoc :tickers initial-tickers :enabled-tickers initial-tickers))
+    (swap! component-state assoc :tickers (:tickers user-settings) :enabled-tickers (:tickers user-settings)))
   [:div.wrapper
    [:div.side-bar
-    (analysis-settings initial-tickers indicator-config-info)]
+    (analysis-settings user-settings indicator-config-info on-settings-change)]
    [:div.main-view
     [:> Stack {:direction "row" :spacing 1}
      (price-chart (:chart-data (rum/react component-state)))

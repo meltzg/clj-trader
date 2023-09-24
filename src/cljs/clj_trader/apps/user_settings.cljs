@@ -11,12 +11,12 @@
 
 (def component-state (atom {}))
 
-(defn handle-save [onChange]
+(defn handle-save [on-change]
   (ajax/PUT (str api-url "userSettings")
             {:params          (:settings @component-state)
              :handler         (fn [data]
                                 (swap! component-state assoc :settings data)
-                                (onChange data))
+                                (on-change data))
              :format          :json
              :response-format :json
              :keywords?       true}))
