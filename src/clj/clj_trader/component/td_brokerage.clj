@@ -2,10 +2,11 @@
   (:require [clj-http.client :as http]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
-            [clj-trader.component.config :refer [get-redirect-uri]]
+            [clj-trader.component.config :as config]
             [clj-trader.utils.helpers :refer [?assoc]]
             [clj-trader.utils.secrets :as secrets]
             [clojure.java.io :as io]
+            [clojure.tools.logging :as logger]
             [com.stuartsierra.component :as component]
             [ring.util.codec :refer [form-encode]]))
 
@@ -79,43 +80,43 @@
   (let [request (merge options {:method                method
                                 :url                   (str api-root path)
                                 :throw-entire-message? true})]
-    (println "make request" (update-in request [:headers :authorization] some?))
+    (logger/log :info (str "make brokerage request " (update-in request [:headers :authorization] some?)))
     (http/request request)))
 
 (defn- make-authenticated-request
-  ([td-brokerage config request]
-   (make-authenticated-request td-brokerage config request true))
-  ([td-brokerage config request refresh-tokens?]
-   (let [{:keys [access-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
+  ([td-brokerage config-manager request]
+   (make-authenticated-request td-brokerage config-manager request true))
+  ([td-brokerage config-manager request refresh-tokens?]
+   (let [{:keys [access-token]} (load-access-info td-brokerage (:keystore-pass (config/get-app-settings config-manager)))]
      (try
        (make-request (assoc-in request [:options :headers :authorization]
                                (str "Bearer " access-token)))
        (catch Exception e
          (if (and refresh-tokens? (= 401 (-> e ex-data :status)))
            (do
-             (println "refresh token and retry")
-             (execute-command {:command      :refresh-access-token
-                               :td-brokerage td-brokerage
-                               :config       config})
-             (make-authenticated-request td-brokerage config request false))
+             (logger/log :warn "refresh token and retry")
+             (execute-command {:command        :refresh-access-token
+                               :td-brokerage   td-brokerage
+                               :config-manager config-manager})
+             (make-authenticated-request td-brokerage config-manager request false))
            (throw e)))))))
 
-(defmethod command->request :sign-in [{:keys [code config]}]
+(defmethod command->request :sign-in [{:keys [code config-manager]}]
   (let [body {:grant_type   "authorization_code"
               :access_type  "offline"
               :code         code
-              :client_id    (-> config :config :client-id)
-              :redirect_uri (get-redirect-uri config)}]
+              :client_id    (:client-id (config/get-app-settings config-manager))
+              :redirect_uri (config/get-redirect-uri config-manager)}]
     {:method  :post
      :path    "/oauth2/token"
      :options {:headers {:content-type "application/x-www-form-urlencoded"}
                :body    (form-encode body)
                :as      :json}}))
 
-(defmethod command->request :refresh-access-token [{:keys [refresh-token config]}]
+(defmethod command->request :refresh-access-token [{:keys [refresh-token config-manager]}]
   (let [body {:grant_type    "refresh_token"
-              :client_id     (-> config :config :client-id)
-              :redirect_uri  (get-redirect-uri config)
+              :client_id     (:client-id (config/get-app-settings config-manager))
+              :redirect_uri  (config/get-redirect-uri config-manager)
               :refresh_token refresh-token
               :access_type   "offline"}]
     {:method  :post
@@ -142,16 +143,16 @@
      :options {:query-params query-params
                :as           :json}}))
 
-(defmethod execute-command :sign-in [{:keys [td-brokerage config] :as command}]
+(defmethod execute-command :sign-in [{:keys [td-brokerage config-manager] :as command}]
   (->> (command->request command)
        make-request
        :body
        format-sign-in-response
-       (save-access-info! td-brokerage (-> config :config :keystore-pass)))
-  (load-access-info td-brokerage (-> config :config :keystore-pass)))
+       (save-access-info! td-brokerage (:keystore-pass (config/get-app-settings config-manager))))
+  (load-access-info td-brokerage (:keystore-pass (config/get-app-settings config-manager))))
 
-(defmethod execute-command :refresh-access-token [{:keys [td-brokerage config] :as command}]
-  (let [{:keys [refresh-token]} (load-access-info td-brokerage (-> config :config :keystore-pass))]
+(defmethod execute-command :refresh-access-token [{:keys [td-brokerage config-manager] :as command}]
+  (let [{:keys [refresh-token]} (load-access-info td-brokerage (:keystore-pass (config/get-app-settings config-manager)))]
     (when refresh-token
       (try
         (->> (assoc command :refresh-token refresh-token)
@@ -159,27 +160,27 @@
              make-request
              :body
              format-sign-in-response
-             (save-access-info! td-brokerage (-> config :config :keystore-pass)))
+             (save-access-info! td-brokerage (:keystore-pass (config/get-app-settings config-manager))))
         (catch Exception e
-          (println "Refresh access token failed" e))))
-    (load-access-info td-brokerage (-> config :config :keystore-pass))))
+          (logger/log :error e "Refresh access token failed"))))
+    (load-access-info td-brokerage (:keystore-pass (config/get-app-settings config-manager)))))
 
-(defmethod execute-command :auth-status [{:keys [td-brokerage config]}]
-  (load-access-info td-brokerage (-> config :config :keystore-pass)))
+(defmethod execute-command :auth-status [{:keys [td-brokerage config-manager]}]
+  (load-access-info td-brokerage (:keystore-pass (config/get-app-settings config-manager))))
 
-(defmethod execute-command :sign-out [{:keys [td-brokerage config]}]
+(defmethod execute-command :sign-out [{:keys [td-brokerage config-manager]}]
   (doall (map #(.deleteEntry (:keystore td-brokerage) (name %))
               [:access-token :refresh-token :expires-at :refresh-expires-at]))
-  (secrets/save-keystore! (:keystore td-brokerage) (-> config :config :keystore-pass) secrets-file)
-  (load-access-info td-brokerage (-> config :config :keystore-pass)))
+  (secrets/save-keystore! (:keystore td-brokerage) (:keystore-pass (config/get-app-settings config-manager)) secrets-file)
+  (load-access-info td-brokerage (:keystore-pass (config/get-app-settings config-manager))))
 
-(defmethod execute-command :price-history [{:keys [td-brokerage config params] :as command}]
+(defmethod execute-command :price-history [{:keys [td-brokerage config-manager params] :as command}]
   (let [tickers (or (:tickers params)
-                    (-> config :user-settings deref :tickers))]
+                    (:tickers (config/get-user-settings config-manager)))]
     (pmap (fn [ticker]
             (->> (assoc command :ticker ticker)
                  command->request
-                 (make-authenticated-request td-brokerage config)
+                 (make-authenticated-request td-brokerage config-manager)
                  :body
                  format-price-history
                  calc-stats))
@@ -194,16 +195,16 @@
       (secrets/save-keystore! ks keystore-pass secrets-file)
       ks)))
 
-(defrecord TDBrokerage [config]
+(defrecord TDBrokerage [config-manager]
   component/Lifecycle
 
   (start [this]
     (assoc this :td-brokerage {:oauth-uri (str "https://auth.tdameritrade.com/auth?response_type=code&redirect_uri="
-                                               (get-redirect-uri config)
+                                               (config/get-redirect-uri config-manager)
                                                "&client_id="
-                                               (get-in config [:config :client-id])
+                                               (:client-id (config/get-app-settings config-manager))
                                                "%40AMER.OAUTHAP")
-                               :keystore  (load-or-create-keystore (get-in config [:config :keystore-pass]))}))
+                               :keystore  (load-or-create-keystore (:keystore-pass (config/get-app-settings config-manager)))}))
 
   (stop [this]
     (assoc this :td-brokerage nil)))

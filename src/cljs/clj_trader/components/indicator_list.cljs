@@ -8,7 +8,6 @@
                                      AccordionActions
                                      AccordionDetails
                                      AccordionSummary
-                                     Button
                                      Fab
                                      FormControl
                                      IconButton
@@ -54,8 +53,6 @@
      [:> AccordionDetails {}
       (map #(apply (partial option-control on-option-change) %) (:opts indicator-info))]
      [:> AccordionActions
-      [:> Button {:variant "contained"} "Save"]
-      [:> Button {:variant "contained"} "Reset"]
       [:> IconButton {:color   "error"
                       :onClick #(on-delete indicator-key)}
        [:> DeleteIcon {}]]]]))

@@ -9,13 +9,13 @@
 
 (defn new-system [app-settings-file user-settings-file]
   (component/system-map
-    :config (config/make-config app-settings-file user-settings-file)
+    :config-manager (config/make-config app-settings-file user-settings-file)
     :td-brokerage (component/using
                     (td-brokerage/make-td)
-                    [:config])
+                    [:config-manager])
     :api (component/using
            (api/make-api)
-           [:config
+           [:config-manager
             :td-brokerage])))
 
 

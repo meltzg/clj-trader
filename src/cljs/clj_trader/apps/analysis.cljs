@@ -46,12 +46,12 @@
    :name               ticker
    :yValueFormatString "$###0.00"
    :dataPoints         (map (fn [candle]
-                               {:x (js/Date. (:datetime candle))
-                                :y [(:open candle)
-                                    (:high candle)
-                                    (:low candle)
-                                    (:close candle)]})
-                             price-candles)})
+                              {:x (js/Date. (:datetime candle))
+                               :y [(:open candle)
+                                   (:high candle)
+                                   (:low candle)
+                                   (:close candle)]})
+                            price-candles)})
 
 (defn price-history->table-data [{:keys [ticker stats]}]
   (prn "STATS" stats)
