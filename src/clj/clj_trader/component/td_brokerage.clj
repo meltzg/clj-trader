@@ -55,6 +55,16 @@
                                                 (fn [price-candles key]
                                                   (/ (apply + (map key price-candles)) (count price-candles)))))))
 
+(defn calc-indicators [indicators {:keys [price-candles ticker] :as price-history}]
+  (let [start-date (apply min (map :datetime price-candles))
+        end-date (apply max (map :datetime price-candles))
+        grouped-indicators (group-by (comp :value
+                                           :window-type
+                                           :opts
+                                           second)
+                                     indicators)]
+    price-history))
+
 (defn save-access-info! [{:keys [keystore]} keystore-pass access-info]
   (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
                                        :refresh-expires-at (tc/to-string (:refresh-expires-at access-info)))
@@ -143,6 +153,9 @@
      :options {:query-params query-params
                :as           :json}}))
 
+(defmethod command->request :detailed-price-history [command]
+  (command->request (assoc command :command :price-history)))
+
 (defmethod execute-command :sign-in [{:keys [td-brokerage config-manager] :as command}]
   (->> (command->request command)
        make-request
@@ -182,11 +195,15 @@
                  command->request
                  (make-authenticated-request td-brokerage config-manager)
                  :body
-                 format-price-history
-                 calc-stats))
+                 format-price-history))
           (if (string? tickers)
             [tickers]
             tickers))))
+
+(defmethod execute-command :detailed-price-history [{:keys [td-brokerage config-manager params] :as command}]
+  (let [price-histories (execute-command (assoc command :command :price-history))
+        indicators (:indicators (config/get-user-settings config-manager))]
+    (map calc-stats price-histories)))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))

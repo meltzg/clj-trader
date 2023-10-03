@@ -54,7 +54,7 @@
 
 (defn- price-history-handler [config-manager {:keys [td-brokerage]} params]
   (fn [& _]
-    (response (td/execute-command {:command        :price-history
+    (response (td/execute-command {:command        :detailed-price-history
                                    :config-manager config-manager
                                    :td-brokerage   td-brokerage
                                    :params         (merge params
