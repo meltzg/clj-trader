@@ -29,6 +29,12 @@
 (defmulti command->request :command)
 (defmulti execute-command :command)
 
+(defn period-type-for-frequency [frequency-type]
+  (first
+    (map first
+         (filter #(some #{frequency-type} (second %))
+                 (:valid-frequency-type-for-period period-frequency-info)))))
+
 (defn- format-sign-in-response [{:keys [access_token
                                         expires_in
                                         refresh_token
@@ -55,14 +61,23 @@
                                                 (fn [price-candles key]
                                                   (/ (apply + (map key price-candles)) (count price-candles)))))))
 
-(defn calc-indicators [indicators {:keys [price-candles ticker] :as price-history}]
+(defn calc-indicators [command indicators {:keys [price-candles ticker] :as price-history}]
   (let [start-date (apply min (map :datetime price-candles))
         end-date (apply max (map :datetime price-candles))
         grouped-indicators (group-by (comp :value
                                            :window-type
                                            :opts
                                            second)
-                                     indicators)]
+                                     indicators)
+        price-history-params (into {} (map #(vec [% {:start-date     start-date
+                                                     :end-date       end-date
+                                                     :frequency-type %
+                                                     :frequency      1
+                                                     :period-type    (period-type-for-frequency %)
+                                                     :tickers        [ticker]}])
+                                           (keys grouped-indicators)))
+        indicator-price-histories (update-vals price-history-params #(execute-command (assoc command :command :price-history
+                                                                                                     :params %)))]
     price-history))
 
 (defn save-access-info! [{:keys [keystore]} keystore-pass access-info]
@@ -201,9 +216,13 @@
             tickers))))
 
 (defmethod execute-command :detailed-price-history [{:keys [td-brokerage config-manager params] :as command}]
+  (clojure.pprint/pprint command)
   (let [price-histories (execute-command (assoc command :command :price-history))
         indicators (:indicators (config/get-user-settings config-manager))]
-    (map calc-stats price-histories)))
+    (map #(->> %
+               calc-stats
+               (calc-indicators command indicators))
+         price-histories)))
 
 (defn load-or-create-keystore [keystore-pass]
   (if (.exists (io/file secrets-file))
