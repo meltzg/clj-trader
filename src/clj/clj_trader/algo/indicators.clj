@@ -35,8 +35,8 @@
         std-dev (standard-deviation prices)
         deviation (* num-std-devs std-dev)]
     [(apply max (map :datetime price-candles))
-     (+ avg deviation)
-     (- avg deviation)]))
+     (- avg deviation)
+     (+ avg deviation)]))
 
 (defmulti make-indicator :type)
 
@@ -45,8 +45,8 @@
     [(apply max (map :datetime price-candles))
      (average (map price-key price-candles))]))
 
-(defmethod make-indicator :bollinger [{:keys [num-std-devs]}]
-  (partial bollinger-bands num-std-devs))
+(defmethod make-indicator :bollinger [{:keys [opts]}]
+  (partial bollinger-bands (-> opts :num-std-devs :value)))
 
 (defn moving-indicator [{:keys [price-candles price-key opts] :as op}]
   (let [indicator (make-indicator op)]
