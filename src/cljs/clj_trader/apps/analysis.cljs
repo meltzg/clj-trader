@@ -1,7 +1,7 @@
 (ns clj-trader.apps.analysis
   (:require [ajax.core :as ajax]
             [clj-trader.components.date-selector :refer [date-selector]]
-            [clj-trader.components.indicator-list :refer [indicator-list]]
+            [clj-trader.components.indicator-list :refer [indicator-list make-indicator-name]]
             [clj-trader.components.inputs :refer [form-selector]]
             [clj-trader.components.symbol-list :refer [symbol-list]]
             [clj-trader.utils :as utils :refer [api-url]]
@@ -40,24 +40,36 @@
                             :tickers         []
                             :enabled-tickers []}))
 
-(defn price-history->chart-data [{:keys [ticker price-candles]}]
-  {:type               "candlestick"
+(defn indicator-data->chart-data [ticker indicator-info indicator-data]
+  {:type               "line"
    :showInLegend       true
-   :name               ticker
+   :name               (str ticker "-" (make-indicator-name indicator-info))
    :yValueFormatString "$###0.00"
-   :dataPoints         (map (fn [candle]
-                              {:x (js/Date. (:datetime candle))
-                               :y [(:open candle)
-                                   (:high candle)
-                                   (:low candle)
-                                   (:close candle)]})
-                            price-candles)})
+   :markerSize         0
+   :dataPoints         (map #(hash-map :x (js/Date. (first %))
+                                       :y (second %))
+                            indicator-data)})
+
+(defn price-history->chart-data [{:keys [indicators]} {:keys [ticker price-candles indicator-data]}]
+  (cons
+    {:type               "candlestick"
+     :showInLegend       true
+     :name               ticker
+     :yValueFormatString "$###0.00"
+     :dataPoints         (map (fn [candle]
+                                {:x (js/Date. (:datetime candle))
+                                 :y [(:open candle)
+                                     (:high candle)
+                                     (:low candle)
+                                     (:close candle)]})
+                              price-candles)}
+    (map #(indicator-data->chart-data ticker (% indicators) (% indicator-data)) (keys indicator-data))))
 
 (defn price-history->table-data [{:keys [ticker stats]}]
   (prn "STATS" stats)
   (assoc stats :ticker ticker))
 
-(defn refresh-data []
+(defn refresh-data [user-settings]
   (ajax/GET (str api-url "priceHistory")
             {:format          :transit
              :response-format :transit
@@ -75,7 +87,7 @@
                                 (swap! component-state
                                        assoc
                                        :chart-data
-                                       (map price-history->chart-data price-histories)
+                                       (mapcat (partial price-history->chart-data user-settings) price-histories)
                                        :table-data
                                        (map price-history->table-data price-histories)))}))
 
@@ -114,8 +126,11 @@
                                :exportEnabled    true
                                :axis             {:prefix "$"
                                                   :title  "Price (USD)"}
-                               :legend           {:cursor    "pointer"
-                                                  :itemclick handle-legend-click}
+                               :toolTip          {:shared true}
+                               :legend           {:horizontalAlign "left"
+                                                  :verticalAlign    "center"
+                                                  :cursor          "pointer"
+                                                  :itemclick       handle-legend-click}
                                :data             (clj->js chart-data)}}])
 
 (rum/defc stats-table [stats-data]
@@ -223,5 +238,5 @@
     [:> Stack {:direction "row" :spacing 1}
      (chart-settings period-frequency-info)
      [:> Button {:variant "contained"
-                 :onClick refresh-data}
+                 :onClick (partial refresh-data user-settings)}
       "Refresh"]]]])

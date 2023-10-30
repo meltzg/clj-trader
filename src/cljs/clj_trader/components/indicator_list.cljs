@@ -27,6 +27,9 @@
 (defn handle-indicator-close []
   (swap! component-state dissoc :anchor-element))
 
+(defn make-indicator-name [indicator]
+  (clojure.string/join "-" (cons (:type indicator) (map #(:value (second %)) (:opts indicator)))))
+
 (defmulti option-control #(-> %3 :type keyword))
 
 (defmethod option-control :choice [on-change opt-key {:keys [display-name opts value] :as config}]
