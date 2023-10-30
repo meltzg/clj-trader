@@ -2,6 +2,7 @@
   (:require [clj-http.client :as http]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
+            [clj-trader.algo.indicators :refer [moving-indicator]]
             [clj-trader.component.config :as config]
             [clj-trader.utils.helpers :refer [?assoc]]
             [clj-trader.utils.secrets :as secrets]
@@ -69,16 +70,30 @@
                                            :opts
                                            second)
                                      indicators)
-        price-history-params (into {} (map #(vec [% {:start-date     start-date
-                                                     :end-date       end-date
-                                                     :frequency-type %
-                                                     :frequency      1
-                                                     :period-type    (period-type-for-frequency %)
-                                                     :tickers        [ticker]}])
-                                           (keys grouped-indicators)))
-        indicator-price-histories (update-vals price-history-params #(execute-command (assoc command :command :price-history
-                                                                                                     :params %)))]
-    price-history))
+        price-history-params (update-vals grouped-indicators #(hash-map :start-date start-date
+                                                                        :end-date end-date
+                                                                        :frequency-type (-> %
+                                                                                            first
+                                                                                            second
+                                                                                            :opts
+                                                                                            :window-type
+                                                                                            :value)
+                                                                        :frequency 1
+                                                                        :period-type (-> %
+                                                                                         first
+                                                                                         second
+                                                                                         :opts
+                                                                                         :window-type
+                                                                                         :value
+                                                                                         period-type-for-frequency)
+                                                                        :tickers [ticker]))
+        indicator-price-histories (update-vals price-history-params #(first (execute-command (assoc command :command :price-history
+                                                                                                            :params %))))
+        calculated-indicators (update-vals indicators #(moving-indicator (assoc % :price-candles (get-in indicator-price-histories
+                                                                                                         [(-> % :opts :window-type :value)
+                                                                                                          :price-candles])
+                                                                                  :price-key :close)))]
+    (assoc price-history :indicator-data calculated-indicators)))
 
 (defn save-access-info! [{:keys [keystore]} keystore-pass access-info]
   (let [access-info (assoc access-info :expires-at (tc/to-string (:expires-at access-info))
@@ -216,7 +231,6 @@
             tickers))))
 
 (defmethod execute-command :detailed-price-history [{:keys [td-brokerage config-manager params] :as command}]
-  (clojure.pprint/pprint command)
   (let [price-histories (execute-command (assoc command :command :price-history))
         indicators (:indicators (config/get-user-settings config-manager))]
     (map #(->> %

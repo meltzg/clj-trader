@@ -29,24 +29,27 @@
       (/ (reduce + (map #(Math/pow (- % avg) 2) col))
          (- (count col) 1)))))
 
-(defn bollinger-bands [num-std-devs col]
-  (let [avg (average col)
-        std-dev (standard-deviation col)
+(defn bollinger-bands [num-std-devs price-key price-candles]
+  (let [prices (map price-key price-candles)
+        avg (average prices)
+        std-dev (standard-deviation prices)
         deviation (* num-std-devs std-dev)]
-    [(+ avg deviation)
+    [(apply max (map :datetime price-candles))
+     (+ avg deviation)
      (- avg deviation)]))
 
-(defmulti make-indicator :indicator)
+(defmulti make-indicator :type)
 
 (defmethod make-indicator :sma [_]
-  average)
+  (fn [price-key price-candles]
+    [(apply max (map :datetime price-candles))
+     (average (map price-key price-candles))]))
 
 (defmethod make-indicator :bollinger [{:keys [num-std-devs]}]
   (partial bollinger-bands num-std-devs))
 
-(defn moving-indicator [{:keys [price-candles price-key window-size] :as op}]
+(defn moving-indicator [{:keys [price-candles price-key opts] :as op}]
   (let [indicator (make-indicator op)]
     (->> price-candles
-         (map price-key)
-         (partition window-size 1)
-         (map indicator))))
+         (partition (-> opts :window-size :value) 1)
+         (map (partial indicator price-key)))))
